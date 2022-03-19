@@ -89,7 +89,7 @@ public class WebSocketPluginTest {
                         .build())
                 .collect(Collectors.toList());
         this.exchange = MockServerWebExchange.from(MockServerHttpRequest.get("localhost")
-                .remoteAddress(new InetSocketAddress(8090))
+                .remoteAddress(new InetSocketAddress(8001))
                 .header(UPGRADE, "WebSocket")
                 .header(CONNECTION, "upgrade")
                 .header(com.google.common.net.HttpHeaders.SEC_WEBSOCKET_KEY, "websocket")

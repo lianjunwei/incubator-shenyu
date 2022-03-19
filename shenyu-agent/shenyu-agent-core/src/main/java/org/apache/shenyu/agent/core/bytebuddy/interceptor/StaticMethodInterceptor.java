@@ -55,7 +55,7 @@ public class StaticMethodInterceptor {
      *
      * @param klass the klass
      * @param method the method
-     * @param args the args
+     * @param args the args //todo
      * @param callable the callable
      * @return the object
      * @throws Exception the exception

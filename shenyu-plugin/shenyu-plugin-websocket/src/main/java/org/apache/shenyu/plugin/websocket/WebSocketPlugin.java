@@ -109,7 +109,7 @@ public class WebSocketPlugin extends AbstractShenyuPlugin {
         if (StringUtils.isEmpty(protocol)) {
             protocol = "ws://";
         }
-        String path = shenyuContext.getMethod();
+        String path = shenyuContext.getMethod();//todo
         if (StringUtils.hasText(exchange.getRequest().getURI().getQuery())) {
             path = String.join("?", path, RequestQueryCodecUtil.getCodecQuery(exchange));
         }
