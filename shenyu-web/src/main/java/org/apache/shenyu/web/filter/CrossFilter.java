@@ -17,9 +17,13 @@
 
 package org.apache.shenyu.web.filter;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shenyu.common.config.ShenyuConfig.CrossFilterConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -30,6 +34,8 @@ import org.springframework.web.cors.reactive.CorsUtils;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -42,7 +48,17 @@ import java.util.stream.Stream;
  */
 public class CrossFilter implements WebFilter {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CrossFilter.class);
+
     private static final String ALL = "*";
+
+    /**
+     * 自定义跨域的域名后缀.
+     */
+    private static final Set<String> ALLOWED_ORIGIN_SET = new HashSet<>(Arrays.asList(
+        "davinci.com",
+        "xiaojukeji.com"
+    ));
 
     private final CrossFilterConfig filterConfig;
 
@@ -59,27 +75,29 @@ public class CrossFilter implements WebFilter {
             HttpHeaders headers = response.getHeaders();
             // "Access-Control-Allow-Origin"
             // if the allowed origin is empty use the request 's origin
-            if (StringUtils.isBlank(this.filterConfig.getAllowedOrigin())) {
+            /*if (StringUtils.isBlank(this.filterConfig.getAllowedOrigin())) {
                 headers.set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, request.getHeaders().getOrigin());
             } else {
                 this.filterSameHeader(headers, HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN,
                         this.filterConfig.getAllowedOrigin());
-            }
+            }*/
+            this.filterSameHeader(headers, HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN,
+                getAllowedOrigin(request));
             // "Access-Control-Allow-Methods"
             this.filterSameHeader(headers, HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS,
-                    this.filterConfig.getAllowedMethods());
+                this.filterConfig.getAllowedMethods());
             // "Access-Control-Max-Age"
             this.filterSameHeader(headers, HttpHeaders.ACCESS_CONTROL_MAX_AGE,
-                    this.filterConfig.getMaxAge());
+                this.filterConfig.getMaxAge());
             // "Access-Control-Allow-Headers"
             this.filterSameHeader(headers, HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS,
-                    this.filterConfig.getAllowedHeaders());
+                this.filterConfig.getAllowedHeaders());
             // "Access-Control-Expose-Headers"
             this.filterSameHeader(headers, HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS,
-                    this.filterConfig.getAllowedExpose());
+                this.filterConfig.getAllowedExpose());
             // "Access-Control-Allow-Credentials"
             this.filterSameHeader(headers, HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS,
-                    String.valueOf(this.filterConfig.isAllowCredentials()));
+                String.valueOf(this.filterConfig.isAllowCredentials()));
             if (request.getMethod() == HttpMethod.OPTIONS) {
                 response.setStatusCode(HttpStatus.OK);
                 return Mono.empty();
@@ -116,4 +134,36 @@ public class CrossFilter implements WebFilter {
         }
         headers.set(header, String.join(",", newHeaders));
     }
+
+    /**
+     * 自定义跨域.
+     *
+     * @param request 请求
+     * @return check真烦
+     */
+    public String getAllowedOrigin(final ServerHttpRequest request) {
+        String origin = request.getHeaders().getOrigin();
+        LOG.info("CrossFilter getAllowedOrigin start origin={} path={}", origin, request.getPath());
+        if (StringUtils.isEmpty(origin)) {
+            LOG.error("CrossFilter 不支持跨域");
+            return "";
+        }
+
+        UriComponents originUrl = UriComponentsBuilder.fromOriginHeader(origin).build();
+        if (originUrl != null && originUrl.getHost() != null) {
+            for (String allowed : ALLOWED_ORIGIN_SET) {
+                if (originUrl.getHost().contains(allowed)) {
+                    return origin;
+                }
+            }
+        }
+        String appid = request.getQueryParams().getFirst("appid");
+        if (StringUtils.isNotEmpty(appid) && "10007001".equals(appid)) {
+            return origin;
+        }
+
+        LOG.error("CrossFilter 不支持跨域 origin={}", origin);
+        return "";
+    }
+
 }

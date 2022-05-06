@@ -23,7 +23,7 @@
         <version>2.5.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>shenyu-spring-boot-starter-plugin-apache-dubbo</artifactId>
+    <artifactId>zeus-gateway-spring-boot-starter-plugin-apache-dubbo</artifactId>
 
     <dependencies>
         <dependency>

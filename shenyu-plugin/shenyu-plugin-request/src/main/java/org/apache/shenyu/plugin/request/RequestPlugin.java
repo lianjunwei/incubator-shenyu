@@ -68,6 +68,7 @@ public class RequestPlugin extends AbstractShenyuPlugin {
                                 .getURI())
                                 .replaceQueryParams(getQueryParams(request, requestHandle))
                                 .build()
+                                .encode()
                                 .toUri()
                         ).headers(httpHeaders -> setHeaders(httpHeaders, request, requestHandle))
                 ).build();

@@ -93,15 +93,18 @@ public final class ApacheDubboConfigCache extends DubboConfigCache {
      */
     public void init(final DubboRegisterConfig dubboRegisterConfig) {
         if (Objects.isNull(applicationConfig)) {
-            applicationConfig = new ApplicationConfig("shenyu_proxy");
+            applicationConfig = new ApplicationConfig("zeus_gateway_proxy");
         }
         if (needUpdateRegistryConfig(dubboRegisterConfig)) {
             RegistryConfig registryConfigTemp = new RegistryConfig();
-            registryConfigTemp.setProtocol(dubboRegisterConfig.getProtocol());
-            registryConfigTemp.setId("shenyu_proxy");
-            registryConfigTemp.setRegister(false);
+//            registryConfigTemp.setProtocol(dubboRegisterConfig.getProtocol());
+            registryConfigTemp.setProtocol(StringUtils.isNotEmpty(registryConfigTemp.getProtocol()) ? registryConfigTemp.getProtocol() : "disf");
+            registryConfigTemp.setId("zeus_gateway_proxy");
+//            registryConfigTemp.setRegister(false);
+            registryConfigTemp.setRegister(true);
             registryConfigTemp.setAddress(dubboRegisterConfig.getRegister());
             Optional.ofNullable(dubboRegisterConfig.getGroup()).ifPresent(registryConfigTemp::setGroup);
+            registryConfigTemp.setPort(null);
             registryConfig = registryConfigTemp;
         }
         if (Objects.isNull(consumerConfig)) {
