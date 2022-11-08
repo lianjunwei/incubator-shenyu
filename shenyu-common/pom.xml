@@ -25,6 +25,21 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>shenyu-common</artifactId>
 
+    <version>2.4.3-iov-1-SNAPSHOT</version>
+
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <name>artifactory-main-releases</name>
+            <url>http://artifactory.intra.xiaojukeji.com/artifactory/libs-release</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>artifactory-main-snapshots</name>
+            <url>http://artifactory.intra.xiaojukeji.com/artifactory/libs-snapshot</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <properties>
         <grpc.version>1.33.1</grpc.version>
         <protobuf.version>3.13.0</protobuf.version>
