@@ -17,6 +17,9 @@
 
 package org.apache.shenyu.web.handler;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.shenyu.common.utils.JsonUtils;
+import org.apache.shenyu.plugin.api.result.ShenyuResultEnum;
 import org.apache.shenyu.plugin.api.result.ShenyuResultWrap;
 import org.apache.shenyu.plugin.api.utils.WebFluxResultUtils;
 import org.slf4j.Logger;
@@ -28,6 +31,10 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import reactor.retry.RetryExhaustedException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * GlobalErrorHandler.
@@ -42,7 +49,7 @@ public class GlobalErrorHandler implements ErrorWebExceptionHandler {
     /**
      * handler error.
      *
-     * @param exchange the exchange
+     * @param exchange  the exchange
      * @param throwable the throwable
      * @return error result
      */
@@ -51,19 +58,41 @@ public class GlobalErrorHandler implements ErrorWebExceptionHandler {
     public Mono<Void> handle(@NonNull final ServerWebExchange exchange, @NonNull final Throwable throwable) {
         LOG.error(exchange.getLogPrefix() + formatError(throwable, exchange.getRequest()));
         HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        String errorMsg = httpStatus.getReasonPhrase();
+        String data = "";
+        int code = httpStatus.value();
         if (throwable instanceof ResponseStatusException) {
             httpStatus = ((ResponseStatusException) throwable).getStatus();
+        } else if (throwable instanceof RetryExhaustedException) {
+            code = ShenyuResultEnum.SERVICE_TIMEOUT.getCode();
+            errorMsg = ShenyuResultEnum.SERVICE_TIMEOUT.getMsg();
+            String[] split = ((RetryExhaustedException) throwable).getMessage().split(":");
+            if (split.length == 1) {
+                data = split[0];
+            } else if (split.length > 2) {
+                data = split[1] + ":" + split[2];
+            }
         }
         exchange.getResponse().setStatusCode(httpStatus);
+        Map<String, Object> errorResult = new HashMap<>();
+        errorResult.put("code", code);
+        errorResult.put("message", errorMsg);
+        if (StringUtils.isNotEmpty(data)) {
+            errorResult.put("data", data);
+        }
+        errorResult.put("traceId", exchange.getRequest().getHeaders().getFirst("traceId"));
         Object error = ShenyuResultWrap.error(exchange, httpStatus.value(), httpStatus.getReasonPhrase(), throwable);
-        return WebFluxResultUtils.result(exchange, error);
+        LOG.error("errorResult={} errorObject={}", JsonUtils.toJson(errorResult), JsonUtils.toJson(error));
+        return WebFluxResultUtils.result(exchange, errorResult);
+//        errorResult.put("data",);
+//        return WebFluxResultUtils.result(exchange, error);
     }
 
     /**
      * log error info.
      *
      * @param throwable the throwable
-     * @param request the request
+     * @param request   the request
      */
     private String formatError(final Throwable throwable, final ServerHttpRequest request) {
         String reason = throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
