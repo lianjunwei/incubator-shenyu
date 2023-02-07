@@ -14,12 +14,12 @@
 # limitations under the License.
 
 server:
-  port: 9095
+  port: 9096
   address: 0.0.0.0
 
 spring:
   profiles:
-    active: h2
+    active: mysql
   thymeleaf:
     cache: true
     encoding: utf-8
