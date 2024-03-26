@@ -490,6 +490,7 @@ INSERT INTO "public"."permission" VALUES ('1351007708740460544', '13463585604272
 INSERT INTO "public"."permission" VALUES ('1351007708614631424', '1346358560427216896', '1346777907096285184', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."permission" VALUES ('1351007708744654848', '1346358560427216896', '1347048101875167232', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."permission" VALUES ('1351007708744654849', '1346358560427216896', '1347048145877610496', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
+INSERT INTO "public"."permission" VALUES ('1351007708748849151', '1346358560427216896', '1347048240677269503', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."permission" VALUES ('1351007708748849152', '1346358560427216896', '1347048240677269504', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."permission" VALUES ('1351007708753043456', '1346358560427216896', '1347048316216684544', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."permission" VALUES ('1351007708757237760', '1346358560427216896', '1347048776029843456', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
@@ -526,6 +527,8 @@ INSERT INTO "public"."permission" VALUES ('1357977745893326848', '13463585604272
 INSERT INTO "public"."permission" VALUES ('1357977912126177281', '1346358560427216896', '1357977912126177280', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."permission" VALUES ('1357977971827900417', '1346358560427216896', '1357977971827900416', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."permission" VALUES ('1386680049203195905', '1346358560427216896', '1386680049203195904', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
+INSERT INTO "public"."permission" VALUES ('1386680049203195906', '1346358560427216896', '1386680049203195915', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
+INSERT INTO "public"."permission" VALUES ('1386680049203195907', '1346358560427216896', '1386680049203195916', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."permission" VALUES ('1529403932797964288', '1346358560427216896', '1529403932772798464', '2022-05-25 18:08:07', '2022-05-25 18:08:07');
 INSERT INTO "public"."permission" VALUES ('1529403932797964289', '1346358560427216896', '1529403932781187072', '2022-05-25 18:08:07', '2022-05-25 18:08:07');
 INSERT INTO "public"."permission" VALUES ('1529403932797964290', '1346358560427216896', '1529403932781187073', '2022-05-25 18:08:07', '2022-05-25 18:08:07');
@@ -1348,6 +1351,10 @@ INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507016', '35', 'sampl
 INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507017', '38', 'sampleRate', 'sampleRate', 2, 1, 2, '{"required":"0","defaultValue":"","placeholder":"optional,0,0.01~1"}', '2022-07-04 22:00:00', '2022-07-04 22:00:00');
 INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507018', '38', 'sampleRate', 'sampleRate', 2, 3, 11, '{"required":"0","defaultValue":"1","placeholder":"optional,0,0.01~1"}', '2022-07-04 22:00:00', '2022-07-04 22:00:00');
 
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507021', '14', 'rewriteContextPath', 'rewriteContextPath', 2, 2, 2, '{"required":"0","defaultValue":""}', '2024-02-07 14:31:49', '2024-02-07 14:31:49');
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507022', '14', 'percentage', 'percentage', 1, 2, 3, '{"required":"1","defaultValue":"100"}', '2024-02-07 14:31:49', '2024-02-07 14:31:49');
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507023', '3', 'rewriteMetaData', 'rewriteMetaData', 3, 2, 3, '{"required":"1","defaultValue":"false"}', '2024-02-07 14:31:49', '2024-02-07 14:31:49');
+
 -- ----------------------------
 -- Table structure for resource
 -- ----------------------------
@@ -1415,6 +1422,7 @@ INSERT INTO "public"."resource" VALUES ('1347047747305484288', '1346777623011880
 INSERT INTO "public"."resource" VALUES ('1347048004105940992', '1346777766301888512', 'SHENYU.BUTTON.SYSTEM.LIST', '', '', '', 2, 0, '', 1, 0, 'system:authen:list', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."resource" VALUES ('1347048101875167232', '1346777766301888512', 'SHENYU.BUTTON.SYSTEM.DELETE', '', '', '', 2, 1, '', 1, 0, 'system:authen:delete', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."resource" VALUES ('1347048145877610496', '1346777766301888512', 'SHENYU.BUTTON.SYSTEM.ADD', '', '', '', 2, 2, '', 1, 0, 'system:authen:add', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
+INSERT INTO "public"."resource" VALUES ('1347048240677269503', '1346777766301888512', 'SHENYU.PLUGIN.BATCH.OPENED', '', '', '', 2, 3, '', 1, 0, 'system:authen:open', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."resource" VALUES ('1347048240677269504', '1346777766301888512', 'SHENYU.BUTTON.SYSTEM.ENABLE', '', '', '', 2, 3, '', 1, 0, 'system:authen:disable', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."resource" VALUES ('1347048316216684544', '1346777766301888512', 'SHENYU.BUTTON.SYSTEM.SYNCHRONIZE', '', '', '', 2, 4, '', 1, 0, 'system:authen:modify', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."resource" VALUES ('1347048776029843456', '1346777766301888512', 'SHENYU.BUTTON.SYSTEM.EDIT', '', '', '', 2, 5, '', 1, 0, 'system:authen:edit', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
@@ -1445,6 +1453,8 @@ INSERT INTO "public"."resource" VALUES ('1357977745889132544', '1355163372527050
 INSERT INTO "public"."resource" VALUES ('1357977912126177280', '1355163372527050752', 'SHENYU.SYSTEM.EDITOR', '', '', '', 2, 5, '', 1, 0, 'system:resource:editButton', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."resource" VALUES ('1357977971827900416', '1355163372527050752', 'SHENYU.SYSTEM.DELETEDATA', '', '', '', 2, 6, '', 1, 0, 'system:resource:deleteButton', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."resource" VALUES ('1386680049203195904', '1346777157943259136', 'SHENYU.BUTTON.DATA.PERMISSION.CONFIG', '', '', '', 2, 0, '', 1, 0, 'system:manager:configureDataPermission', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
+INSERT INTO "public"."resource" VALUES ('1386680049203195915', '1346777157943259136', 'SHENYU.COMMON.EXPORT', '', '', '', 2, 0, '', 1, 0, 'system:manager:exportConfig', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
+INSERT INTO "public"."resource" VALUES ('1386680049203195916', '1346777157943259136', 'SHENYU.COMMON.IMPORT', '', '', '', 2, 0, '', 1, 0, 'system:manager:importConfig', 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."resource" VALUES ('1529403932772798464', '1346775491550474240', 'sign', 'sign', '/plug/sign', 'sign', 1, 0, 'pic-center', 0, 0, '', 1, '2022-05-25 18:08:07', '2022-05-25 18:08:07');
 INSERT INTO "public"."resource" VALUES ('1529403932781187072', '1346775491550474240', 'sentinel', 'sentinel', '/plug/sentinel', 'sentinel', 1, 0, 'database', 0, 0, '', 1, '2022-05-25 18:08:07', '2022-05-25 18:08:07');
 INSERT INTO "public"."resource" VALUES ('1529403932781187073', '1346775491550474240', 'sofa', 'sofa', '/plug/sofa', 'sofa', 1, 0, 'key', 0, 0, '', 1, '2022-05-25 18:08:07', '2022-05-25 18:08:07');
@@ -2114,6 +2124,8 @@ INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737472', 'discoveryMode
 INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737473', 'discoveryMode', 'DISCOVERY_MODE', 'etcd', '{"etcdTimeout": "3000", "etcdTTL": "5"}', 'discoery mode to link etcd', 0, 1,'2023-03-17 10:15:16.846', '2023-03-07 10:15:16.846');
 INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737474', 'discoveryMode', 'DISCOVERY_MODE', 'nacos', '{"groupName": "SHENYU_GROUP", "nacosNameSpace": "", "username": "", "password": "", "accessKey": "", "secretKey": ""}', 'discoery mode to link nacos', 0, 1,'2023-03-17 10:15:16.846', '2023-03-07 10:15:16.846');
 INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737475', 'discoveryMode', 'DISCOVERY_MODE', 'eureka', '{"eurekaClientRefreshInterval": "10", "eurekaClientRegistryFetchIntervalSeconds": "10"}', 'discoery mode to link eureka', 0, 1,'2023-03-17 10:15:16.846', '2023-03-07 10:15:16.846');
+INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737478', 'rewriteMetaData', 'REWRITE_META_DATA', 'true', 'true', '', 4, 1, '2024-02-07 14:31:49', '2024-02-07 14:31:49');
+INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737479', 'rewriteMetaData', 'REWRITE_META_DATA', 'false', 'false', '', 4, 1, '2024-02-07 14:31:49', '2024-02-07 14:31:49');
 
 -- ----------------------------
 -- Table structure for user_role
@@ -2494,3 +2506,16 @@ COMMENT ON COLUMN "public"."alert_receiver"."type" IS 'notice type 0-SMS 1-Email
 COMMENT ON COLUMN "public"."alert_receiver"."match_all" IS 'match all or not';
 COMMENT ON COLUMN "public"."alert_receiver"."date_created" IS 'create time';
 COMMENT ON COLUMN "public"."alert_receiver"."date_updated" IS 'update time';
+
+DROP TABLE IF EXISTS "public"."int_lock";
+CREATE TABLE "public"."int_lock" (
+    "lock_key" CHAR(36) NOT NULL,
+    "region" VARCHAR(100) NOT NULL,
+    "client_id" CHAR(36),
+    "created_date" TIMESTAMP WITH TIME ZONE NOT NULL,
+    CONSTRAINT INT_LOCK_PK PRIMARY KEY ("lock_key", "region")
+);
+COMMENT ON COLUMN "public"."int_lock"."lock_key" IS 'lock_key';
+COMMENT ON COLUMN "public"."int_lock"."region" IS 'region';
+COMMENT ON COLUMN "public"."int_lock"."client_id" IS 'client_id';
+COMMENT ON COLUMN "public"."int_lock"."created_date" IS 'created_date';
