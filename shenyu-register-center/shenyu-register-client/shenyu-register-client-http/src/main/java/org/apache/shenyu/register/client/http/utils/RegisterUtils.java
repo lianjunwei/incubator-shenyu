@@ -65,7 +65,7 @@ public final class RegisterUtils {
             LOGGER.error("{} client register error: {} ", type, json);
         }
     }
-    
+
     /**
      * Do register.
      *
@@ -82,7 +82,7 @@ public final class RegisterUtils {
             LOGGER.error("{} client register error: {} ", type, json);
         }
     }
-    
+
     /**
      * Do unregister.
      *
@@ -101,7 +101,7 @@ public final class RegisterUtils {
         if (Objects.equals(SUCCESS, result)) {
             LOGGER.info("{} client unregister success: {} ", Constants.URI, json);
         } else {
-            LOGGER.error("{} client unregister error: {} ", Constants.URI, json);
+            LOGGER.error("{} client unregister. result={} error: {} ", Constants.URI, result, json);
         }
     }
 

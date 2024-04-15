@@ -141,7 +141,7 @@ public class SpringMvcClientEventListener extends AbstractContextRefreshedEventL
     protected URIRegisterDTO buildURIRegisterDTO(final ApplicationContext context,
                                                  final Map<String, Object> beans) {
         try {
-            return URIRegisterDTO.builder()
+            return URIRegisterDTO.builder()//todo
                     .contextPath(getContextPath())
                     .appName(getAppName())
                     .protocol(protocol)

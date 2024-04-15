@@ -23,8 +23,10 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.shenyu.common.constant.Constants;
 import org.apache.shenyu.common.utils.GsonUtils;
+import org.apache.shenyu.common.utils.JsonUtils;
 import org.apache.shenyu.register.client.api.FailbackRegistryRepository;
 import org.apache.shenyu.register.client.http.utils.RegisterUtils;
 import org.apache.shenyu.register.client.http.utils.RuntimeUtils;
@@ -43,14 +45,18 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The type Http client register repository.
  */
 @Join
 public class HttpClientRegisterRepository extends FailbackRegistryRepository {
-    
+
+    public static final AtomicBoolean SHUT_DOWN = new AtomicBoolean(false);
+
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientRegisterRepository.class);
 
     private static URIRegisterDTO uriRegisterDTO;
@@ -58,22 +64,22 @@ public class HttpClientRegisterRepository extends FailbackRegistryRepository {
     private static ApiDocRegisterDTO apiDocRegisterDTO;
 
     private String username;
-    
+
     private String password;
-    
+
     private List<String> serverList;
-    
+
     /**
      * server -> accessToken.
      */
     private LoadingCache<String, String> accessToken;
-    
+
     /**
      * Instantiates a new Http client register repository.
      */
     public HttpClientRegisterRepository() {
     }
-    
+
     /**
      * Instantiates a new Http client register repository.
      *
@@ -82,7 +88,7 @@ public class HttpClientRegisterRepository extends FailbackRegistryRepository {
     public HttpClientRegisterRepository(final ShenyuRegisterCenterConfig config) {
         init(config);
     }
-    
+
     @Override
     public void init(final ShenyuRegisterCenterConfig config) {
         this.username = config.getProps().getProperty(Constants.USER_NAME);
@@ -104,7 +110,7 @@ public class HttpClientRegisterRepository extends FailbackRegistryRepository {
                     }
                 });
     }
-    
+
     /**
      * Persist uri.
      *
@@ -115,15 +121,30 @@ public class HttpClientRegisterRepository extends FailbackRegistryRepository {
         if (RuntimeUtils.listenByOther(registerDTO.getPort())) {
             return;
         }
+        Executors.newSingleThreadScheduledExecutor(
+                        new BasicThreadFactory.Builder()
+                                .namingPattern("shenyu-client-register-uri-%d")
+//                                .daemon(true)
+//                        .uncaughtExceptionHandler(uncaughtExceptionHandler)
+                                .build())
+                .scheduleAtFixedRate(() -> {
+                    LOGGER.info("scheduleAtFixedRate will register uri. shutDown:{}", SHUT_DOWN.get());
+                    try {
+                        doRegister(registerDTO, Constants.URI_PATH, Constants.URI);
+                    } catch (Exception e) {
+                        LOGGER.error("scheduleAtFixedRate register URI is fail. registerDTO :{} . will retry. cause: {} ", JsonUtils.toJson(registerDTO), e.getMessage());
+                    }
+                }, 5, 30, TimeUnit.SECONDS);
+//        doRegister(registerDTO, Constants.URI_PATH, Constants.URI);
         doRegister(registerDTO, Constants.URI_PATH, Constants.URI);
         uriRegisterDTO = registerDTO;
     }
-    
+
     @Override
     public void offline(final URIRegisterDTO offlineDTO) {
         doUnregister(offlineDTO);
     }
-    
+
     /**
      * doPersistApiDoc.
      *
@@ -134,7 +155,7 @@ public class HttpClientRegisterRepository extends FailbackRegistryRepository {
         doRegister(registerDTO, Constants.API_DOC_PATH, Constants.API_DOC_TYPE);
         apiDocRegisterDTO = registerDTO;
     }
-    
+
     @Override
     public void doPersistInterface(final MetaDataRegisterDTO metadata) {
         doRegister(metadata, Constants.META_PATH, Constants.META_TYPE);
@@ -171,7 +192,9 @@ public class HttpClientRegisterRepository extends FailbackRegistryRepository {
                 if (StringUtils.isBlank(accessToken)) {
                     throw new NullPointerException("accessToken is null");
                 }
-                RegisterUtils.doRegister(GsonUtils.getInstance().toJson(t), concat, type, accessToken);
+                if (!SHUT_DOWN.get()) {
+                    RegisterUtils.doRegister(GsonUtils.getInstance().toJson(t), concat, type, accessToken);
+                }
                 // considering the situation of multiple clusters, we should continue to execute here
             } catch (Exception e) {
                 LOGGER.error("Register admin url :{} is fail, will retry. cause:{}", server, e.getMessage());
@@ -181,8 +204,12 @@ public class HttpClientRegisterRepository extends FailbackRegistryRepository {
             }
         }
     }
-    
+
     private <T> void doUnregister(final T t) {
+        doUnregisterWithTry(t, true);
+    }
+
+    private <T> void doUnregisterWithTry(final T t, final boolean isNeedTry) {
         for (String server : serverList) {
             String concat = server.concat(Constants.OFFLINE_PATH);
             try {
@@ -193,8 +220,12 @@ public class HttpClientRegisterRepository extends FailbackRegistryRepository {
                 RegisterUtils.doUnregister(GsonUtils.getInstance().toJson(t), concat, accessToken);
                 // considering the situation of multiple clusters, we should continue to execute here
             } catch (Exception e) {
-                LOGGER.error("Unregister admin url :{} is fail. cause:{}", server, e.getMessage());
+                LOGGER.error("Unregister admin url :{} is fail. isNeedTry;{} cause:{}", isNeedTry, server, e.getMessage());
             }
         }
+        if (isNeedTry) {
+            doUnregisterWithTry(t, false);
+        }
     }
+
 }

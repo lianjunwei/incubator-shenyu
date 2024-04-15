@@ -18,9 +18,10 @@
 package org.apache.shenyu.client.core.disruptor.subcriber;
 
 import com.google.common.base.Stopwatch;
-import org.apache.shenyu.client.core.shutdown.ShutdownHookManager;
+//import org.apache.shenyu.client.core.shutdown.ShutdownHookManager;
 import org.apache.shenyu.client.core.shutdown.ShenyuClientShutdownHook;
 import org.apache.shenyu.register.client.api.ShenyuClientRegisterRepository;
+import org.apache.shenyu.register.client.http.HttpClientRegisterRepository;
 import org.apache.shenyu.register.common.dto.URIRegisterDTO;
 import org.apache.shenyu.register.common.enums.EventType;
 import org.apache.shenyu.register.common.subsriber.ExecutorTypeSubscriber;
@@ -38,11 +39,14 @@ import java.util.concurrent.TimeUnit;
  * The type Shenyu client uri executor subscriber.
  */
 public class ShenyuClientURIExecutorSubscriber implements ExecutorTypeSubscriber<URIRegisterDTO> {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(ShenyuClientURIExecutorSubscriber.class);
-    
+
+    private static final String SHUTDOWN_HOOK_SHENYU_THREAD_NAME = "unRegisterShenyuShutdownHook";
+
     private final ShenyuClientRegisterRepository shenyuClientRegisterRepository;
-    
+
+
     /**
      * Instantiates a new Shenyu client uri executor subscriber.
      *
@@ -51,12 +55,12 @@ public class ShenyuClientURIExecutorSubscriber implements ExecutorTypeSubscriber
     public ShenyuClientURIExecutorSubscriber(final ShenyuClientRegisterRepository shenyuClientRegisterRepository) {
         this.shenyuClientRegisterRepository = shenyuClientRegisterRepository;
     }
-    
+
     @Override
     public DataType getType() {
         return DataType.URI;
     }
-    
+
     @Override
     public void executor(final Collection<URIRegisterDTO> dataList) {
         for (URIRegisterDTO uriRegisterDTO : dataList) {
@@ -84,12 +88,27 @@ public class ShenyuClientURIExecutorSubscriber implements ExecutorTypeSubscriber
             }
             ShenyuClientShutdownHook.delayOtherHooks();
             shenyuClientRegisterRepository.persistURI(uriRegisterDTO);
-            ShutdownHookManager.get().addShutdownHook(new Thread(() -> {
+//            Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> shenyuClientRegisterRepository.persistURI(uriRegisterDTO), 0, 30, TimeUnit.SECONDS);
+//            ShutdownHookManager.get().addShutdownHook(new Thread(() -> {
+//                LOG.info("开始执行反注册的关闭钩子");
+//                LOG.info("开始执行反注册的关闭钩子 host:{}, port:{} ", uriRegisterDTO.getHost(), uriRegisterDTO.getPort());
+//                final URIRegisterDTO offlineDTO = new URIRegisterDTO();
+//                BeanUtils.copyProperties(uriRegisterDTO, offlineDTO);
+//                offlineDTO.setEventType(EventType.OFFLINE);
+//                shenyuClientRegisterRepository.offline(offlineDTO);
+//            }, SHUTDOWN_HOOK_SHENYU_THREAD_NAME), Integer.MIN_VALUE);
+
+            //active offline when shutdown, not now
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                boolean shutDown = HttpClientRegisterRepository.SHUT_DOWN.compareAndSet(false, true);
+                LOG.info("开始运行反注册的关闭钩子 shutDown ={} host:{}, port:{} ", shutDown, uriRegisterDTO.getHost(), uriRegisterDTO.getPort());
                 final URIRegisterDTO offlineDTO = new URIRegisterDTO();
                 BeanUtils.copyProperties(uriRegisterDTO, offlineDTO);
                 offlineDTO.setEventType(EventType.OFFLINE);
                 shenyuClientRegisterRepository.offline(offlineDTO);
-            }), 2);
+                LOG.info("反注册的关闭钩子执行完毕 host:{}, port:{} ", uriRegisterDTO.getHost(), uriRegisterDTO.getPort());
+            }, SHUTDOWN_HOOK_SHENYU_THREAD_NAME));
+            LOG.info("添加反注册的关闭钩子 end");
         }
     }
 }
