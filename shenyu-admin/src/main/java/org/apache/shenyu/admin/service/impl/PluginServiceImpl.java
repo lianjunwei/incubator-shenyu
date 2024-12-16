@@ -18,12 +18,16 @@
 package org.apache.shenyu.admin.service.impl;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shenyu.admin.aspect.annotation.Pageable;
+import org.apache.shenyu.admin.mapper.NamespacePluginRelMapper;
 import org.apache.shenyu.admin.mapper.PluginMapper;
 import org.apache.shenyu.admin.model.dto.PluginDTO;
 import org.apache.shenyu.admin.model.dto.PluginHandleDTO;
+import org.apache.shenyu.admin.model.entity.NamespacePluginRelDO;
 import org.apache.shenyu.admin.model.entity.PluginDO;
 import org.apache.shenyu.admin.model.event.plugin.PluginCreatedEvent;
 import org.apache.shenyu.admin.model.page.CommonPager;
@@ -79,12 +83,16 @@ public class PluginServiceImpl implements PluginService {
 
     private final PluginHandleService pluginHandleService;
 
+    private final NamespacePluginRelMapper namespacePluginRelMapper;
+
     public PluginServiceImpl(final PluginMapper pluginMapper,
                              final PluginEventPublisher pluginEventPublisher,
-                             final PluginHandleService pluginHandleService) {
+                             final PluginHandleService pluginHandleService,
+                             final NamespacePluginRelMapper namespacePluginRelMapper) {
         this.pluginMapper = pluginMapper;
         this.pluginEventPublisher = pluginEventPublisher;
         this.pluginHandleService = pluginHandleService;
+        this.namespacePluginRelMapper = namespacePluginRelMapper;
     }
 
     @Override
@@ -129,6 +137,12 @@ public class PluginServiceImpl implements PluginService {
         List<PluginDO> plugins = this.pluginMapper.selectByIds(ids);
         if (CollectionUtils.isEmpty(plugins)) {
             return AdminConstants.SYS_PLUGIN_ID_NOT_EXIST;
+        }
+        Optional<PluginDO> exist = plugins.stream()
+                .filter(value -> Objects.nonNull(this.namespacePluginRelMapper.selectByPluginId(value.getId())))
+                .findAny();
+        if (exist.isPresent()) {
+            return AdminConstants.NAMESPACE_PLUGIN_NOT_DELETE;
         }
         // delete plugins.
         if (this.pluginMapper.deleteByIds(ListUtil.map(plugins, PluginDO::getId)) > 0) {
@@ -195,7 +209,7 @@ public class PluginServiceImpl implements PluginService {
     public List<PluginData> listAll() {
         return ListUtil.map(pluginMapper.selectAll(), PluginTransfer.INSTANCE::mapToData);
     }
-
+    
     @Override
     public List<PluginVO> listAllData() {
         // plugin handle
@@ -209,7 +223,7 @@ public class PluginServiceImpl implements PluginService {
                 .map(pluginDO -> {
                     PluginVO exportVO = PluginVO.buildPluginVO(pluginDO);
                     List<PluginHandleVO> pluginHandleList = Optional
-                            .ofNullable(pluginHandleMap.get(exportVO.getId()))
+                            .ofNullable(pluginHandleMap.getOrDefault(exportVO.getId(), Lists.newArrayList()))
                             .orElse(Lists.newArrayList())
                             .stream()
                             // to make less volume of export data
@@ -219,7 +233,39 @@ public class PluginServiceImpl implements PluginService {
                     return exportVO;
                 }).collect(Collectors.toList());
     }
-
+    
+    @Override
+    public List<PluginVO> listAllDataByNamespaceId(final String namespaceId) {
+        List<NamespacePluginRelDO> pluginRelDOList = namespacePluginRelMapper.listByNamespaceId(namespaceId);
+        if (CollectionUtils.isEmpty(pluginRelDOList)) {
+            return Lists.newArrayList();
+        }
+        Set<String> pluginIdSet = pluginRelDOList.stream().map(NamespacePluginRelDO::getPluginId).collect(Collectors.toSet());
+        
+        List<PluginDO> pluginDOList = pluginMapper.selectByIds(Lists.newArrayList(pluginIdSet));
+        
+        // plugin handle
+        Map<String, List<PluginHandleVO>> pluginHandleMap = pluginHandleService.listAllDataByPluginIds(pluginIdSet)
+                .stream()
+                .collect(Collectors.groupingBy(PluginHandleVO::getPluginId));
+        
+        return pluginDOList
+                .stream()
+                .filter(Objects::nonNull)
+                .map(pluginDO -> {
+                    PluginVO exportVO = PluginVO.buildPluginVO(pluginDO);
+                    List<PluginHandleVO> pluginHandleList = Optional
+                            .ofNullable(pluginHandleMap.getOrDefault(exportVO.getId(), Lists.newArrayList()))
+                            .orElse(Lists.newArrayList())
+                            .stream()
+                            // to make less volume of export data
+                            .peek(x -> x.setDictOptions(null))
+                            .collect(Collectors.toList());
+                    exportVO.setPluginHandleList(pluginHandleList);
+                    return exportVO;
+                }).collect(Collectors.toList());
+    }
+    
     @Override
     public List<PluginData> listAllNotInResource() {
         return ListUtil.map(pluginMapper.listAllNotInResource(), PluginTransfer.INSTANCE::mapToData);
@@ -299,9 +345,60 @@ public class PluginServiceImpl implements PluginService {
                     .fail(successCount, "import fail plugin: " + errorMsgBuilder);
         }
         return ConfigImportResult.success(successCount);
-
     }
-
+    
+    @Override
+    public ConfigImportResult importData(final String namespace, final List<PluginDTO> pluginList) {
+        if (CollectionUtils.isEmpty(pluginList)) {
+            return ConfigImportResult.success();
+        }
+        List<NamespacePluginRelDO> pluginRelDOList = namespacePluginRelMapper.listByNamespaceId(namespace);
+        Map<String, PluginDO> existPluginMap = Maps.newHashMap();
+        if (CollectionUtils.isNotEmpty(pluginRelDOList)) {
+            List<String> pluginIds = pluginRelDOList.stream().map(NamespacePluginRelDO::getPluginId).distinct().collect(Collectors.toList());
+            existPluginMap = pluginMapper.selectByIds(pluginIds)
+                    .stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(PluginDO::getName, x -> x));
+        }
+        StringBuilder errorMsgBuilder = new StringBuilder();
+        int successCount = 0;
+        for (PluginDTO pluginDTO : pluginList) {
+            String pluginName = pluginDTO.getName();
+            String pluginId;
+            // check plugin base info
+            if (MapUtils.isNotEmpty(existPluginMap) && existPluginMap.containsKey(pluginName)) {
+                PluginDO existPlugin = existPluginMap.get(pluginName);
+                pluginId = existPlugin.getId();
+                errorMsgBuilder
+                        .append(pluginName)
+                        .append(",");
+            } else {
+                PluginDO pluginDO = PluginDO.buildPluginDO(pluginDTO);
+                pluginId = pluginDO.getId();
+                if (pluginMapper.insertSelective(pluginDO) > 0) {
+                    // publish create event. init plugin data
+                    successCount++;
+                }
+            }
+            // check and import plugin handle
+            List<PluginHandleDTO> pluginHandleList = pluginDTO.getPluginHandleList();
+            if (CollectionUtils.isNotEmpty(pluginHandleList)) {
+                pluginHandleService
+                        .importData(pluginHandleList
+                                .stream()
+                                .peek(x -> x.setPluginId(pluginId))
+                                .collect(Collectors.toList()));
+            }
+        }
+        if (StringUtils.isNotEmpty(errorMsgBuilder)) {
+            errorMsgBuilder.setLength(errorMsgBuilder.length() - 1);
+            return ConfigImportResult
+                    .fail(successCount, "import fail plugin: " + errorMsgBuilder);
+        }
+        return ConfigImportResult.success(successCount);
+    }
+    
     /**
      * create plugin.<br>
      * insert plugin and insert plugin data.
@@ -312,7 +409,7 @@ public class PluginServiceImpl implements PluginService {
      * @see PluginCreatedEvent
      */
     private String create(final PluginDTO pluginDTO) {
-        Assert.isNull(pluginMapper.nameExisted(pluginDTO.getName()), AdminConstants.PLUGIN_NAME_IS_EXIST);
+        Assert.isNull(pluginMapper.nameExisted(pluginDTO.getName()), "create" + AdminConstants.PLUGIN_NAME_IS_EXIST + pluginDTO.getName());
         if (Objects.nonNull(pluginDTO.getFile())) {
             Assert.isTrue(checkFile(Base64.decode(pluginDTO.getFile())), AdminConstants.THE_PLUGIN_JAR_FILE_IS_NOT_CORRECT_OR_EXCEEDS_16_MB);
         }
@@ -332,7 +429,7 @@ public class PluginServiceImpl implements PluginService {
      * @return success is empty
      */
     private String update(final PluginDTO pluginDTO) {
-        Assert.isNull(pluginMapper.nameExistedExclude(pluginDTO.getName(), Collections.singletonList(pluginDTO.getId())), AdminConstants.PLUGIN_NAME_IS_EXIST);
+        Assert.isNull(pluginMapper.nameExistedExclude(pluginDTO.getName(), Collections.singletonList(pluginDTO.getId())), AdminConstants.PLUGIN_NAME_IS_EXIST + pluginDTO.getName());
         if (Objects.nonNull(pluginDTO.getFile())) {
             Assert.isTrue(checkFile(Base64.decode(pluginDTO.getFile())), AdminConstants.THE_PLUGIN_JAR_FILE_IS_NOT_CORRECT_OR_EXCEEDS_16_MB);
         }
@@ -359,7 +456,7 @@ public class PluginServiceImpl implements PluginService {
                 return false;
             }
             Set<String> dependencyTree = JarDependencyUtils.getDependencyTree(file);
-            return dependencyTree.contains(AdminConstants.PLUGIN_ABSTRACR_PATH) || dependencyTree.contains(AdminConstants.PLUGIN_INTERFACE_PATH);
+            return dependencyTree.contains(AdminConstants.PLUGIN_ABSTRACT_PATH) || dependencyTree.contains(AdminConstants.PLUGIN_INTERFACE_PATH);
         } catch (Exception e) {
             LogUtils.error(LOG, "check plugin jar error:{}", e.getMessage());
             throw new ShenyuException(e);

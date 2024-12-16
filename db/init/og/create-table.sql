@@ -123,6 +123,7 @@ CREATE TABLE "public"."app_auth" (
   "ext_info" varchar(1024) COLLATE "pg_catalog"."default",
   "open" int2 NOT NULL,
   "enabled" int2 NOT NULL,
+  "namespace_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "date_created" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
   "date_updated" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
 )
@@ -135,6 +136,7 @@ COMMENT ON COLUMN "public"."app_auth"."phone" IS 'phone number when the user app
 COMMENT ON COLUMN "public"."app_auth"."ext_info" IS 'extended parameter json';
 COMMENT ON COLUMN "public"."app_auth"."open" IS 'open auth path or not (0 close, 1 open) ';
 COMMENT ON COLUMN "public"."app_auth"."enabled" IS 'delete or not (0 close, 1 open) ';
+COMMENT ON COLUMN "public"."app_auth"."namespace_id" IS 'namespace id';
 COMMENT ON COLUMN "public"."app_auth"."date_created" IS 'create time';
 COMMENT ON COLUMN "public"."app_auth"."date_updated" IS 'update time';
 
@@ -202,6 +204,7 @@ CREATE TABLE "public"."dashboard_user" (
   "password" varchar(128) COLLATE "pg_catalog"."default",
   "role" int4 NOT NULL,
   "enabled" int2 NOT NULL,
+  "client_id" varchar(32) COLLATE "pg_catalog"."default",
   "date_created" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
   "date_updated" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
 )
@@ -217,7 +220,7 @@ COMMENT ON COLUMN "public"."dashboard_user"."date_updated" IS 'update time';
 -- ----------------------------
 -- Records of dashboard_user
 -- ----------------------------
-INSERT INTO "public"."dashboard_user" VALUES ('1', 'admin', 'ba3253876aed6bc22d4a6ff53d8406c6ad864195ed144ab5c87621b6c233b548baeae6956df346ec8c17f5ea10f35ee3cbc514797ed7ddd3145464e2a0bab413', 1, 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
+INSERT INTO "public"."dashboard_user" VALUES ('1', 'admin', 'ba3253876aed6bc22d4a6ff53d8406c6ad864195ed144ab5c87621b6c233b548baeae6956df346ec8c17f5ea10f35ee3cbc514797ed7ddd3145464e2a0bab413', 1, 1, null, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 
 -- ----------------------------
 -- Table structure for data_permission
@@ -314,6 +317,7 @@ CREATE TABLE "public"."meta_data" (
   "method_name" varchar(255) COLLATE "pg_catalog"."default",
   "parameter_types" varchar(255) COLLATE "pg_catalog"."default",
   "rpc_ext" varchar(512) COLLATE "pg_catalog"."default",
+  "namespace_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "date_created" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
   "date_updated" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
   "enabled" int2 NOT NULL
@@ -328,6 +332,7 @@ COMMENT ON COLUMN "public"."meta_data"."service_name" IS 'service name';
 COMMENT ON COLUMN "public"."meta_data"."method_name" IS 'method name';
 COMMENT ON COLUMN "public"."meta_data"."parameter_types" IS 'parameter types are provided with multiple parameter types separated by commas';
 COMMENT ON COLUMN "public"."meta_data"."rpc_ext" IS 'rpc extended information, json format';
+COMMENT ON COLUMN "public"."meta_data"."namespace_id" IS 'namespace id';
 COMMENT ON COLUMN "public"."meta_data"."date_created" IS 'create time';
 COMMENT ON COLUMN "public"."meta_data"."date_updated" IS 'update time';
 COMMENT ON COLUMN "public"."meta_data"."enabled" IS 'enabled state (0 close, 1 open) ';
@@ -907,6 +912,12 @@ INSERT INTO "public"."permission" VALUES ('1697146375754190848','134635856042721
 INSERT INTO "public"."permission" VALUES ('1697146617543233536','1346358560427216896','1697146617513873408', '2023-08-31 15:17:39', '2023-08-31 07:17:39');
 INSERT INTO "public"."permission" VALUES ('1697146860569595904','1346358560427216896','1697146860540235776', '2023-08-31 15:18:37', '2023-08-31 07:18:37');
 
+INSERT INTO "public"."permission" VALUES ('1697141926281381720','1346358560427216896','1844015648095666176', '2023-08-31 06:59:01', '2023-08-31 06:59:01');
+INSERT INTO "public"."permission" VALUES ('1697145808239621836','1346358560427216896','1844025735425183744', '2023-08-31 07:22:07', '2023-08-31 07:22:07');
+INSERT INTO "public"."permission" VALUES ('1697146375754129471','1346358560427216896','1844025850382667776', '2023-08-31 07:14:26', '2023-08-31 07:14:26');
+INSERT INTO "public"."permission" VALUES ('1697146617543248162','1346358560427216896','1844025989214130176', '2023-08-31 07:22:07', '2023-08-31 07:22:07');
+INSERT INTO "public"."permission" VALUES ('1697146860569542740','1346358560427216896','1844026099075534848', '2023-08-31 07:18:37', '2023-08-31 07:18:37');
+
 -- ----------------------------
 -- Table structure for plugin
 -- ----------------------------
@@ -975,7 +986,7 @@ INSERT INTO "public"."plugin" VALUES ('39', 'casdoor', '{"endpoint":"http://loca
 INSERT INTO "public"."plugin" VALUES ('40', 'keyAuth', NULL, 'Authentication', 150, 0, '2022-07-24 19:00:00', '2022-07-24 19:00:00', null);
 INSERT INTO "public"."plugin" VALUES ('42', 'tcp', null, 'Proxy', 320, 1, '2022-05-25 18:08:01', '2022-05-25 18:08:01', null);
 INSERT INTO "public"."plugin" VALUES ('43', 'loggingHuaweiLts', '{ "totalSizeInBytes": "104857600","maxBlockMs":"0","ioThreadCount":"1","batchSizeThresholdInBytes":"524288","batchCountThreshold":"4096","lingerMs":"2000","retries":"100","baseRetryBackoffMs":"100","maxRetryBackoffMs":"100","enableLocalTest":"true","setGiveUpExtraLongSingleLog":"false"}', 'Logging', 177, 0, '2023-07-05 14:03:53', '2023-07-06 12:42:07', null);
-INSERT INTO "public"."plugin" VALUES ('44', 'basicAuth', '{"defaultHandleJson":"{\"authorization\":\"test:test123\"}"}', 'Authentication', 150, 0, '2022-07-24 19:00:00', '2022-07-24 19:00:00', null);
+INSERT INTO "public"."plugin" VALUES ('44', 'basicAuth', '{"defaultHandleJson":"{"authorization":"test:test123"}"}', 'Authentication', 150, 0, '2022-07-24 19:00:00', '2022-07-24 19:00:00', null);
 INSERT INTO "public"."plugin" VALUES ('45', 'loggingRabbitMQ', '{"host":"127.0.0.1","port":5672,"password":"admin","username":"admin","exchangeName":"exchange.logging.plugin","queueName":"queue.logging.plugin","routingKey":"topic.logging","virtualHost":"/","exchangeType":"direct","durable":"true","exclusive":"false","autoDelete":"false"}', 'Logging', 171, 0, '2023-11-06 15:49:56.454', '2023-11-10 10:40:58.447', NULL);
 
 -- ----------------------------
@@ -1096,13 +1107,13 @@ INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330591', '24', 'field
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330592', '24', 'decryptKey', 'decryptKey', 2, 2, 3, NULL, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330593', '24', 'encryptKey', 'encryptKey', 2, 2, 3, NULL, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330594', '24', 'way', 'way', 3, 2, 3, NULL, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
-INSERT INTO "public"."plugin_handle" VALUES ('1630760188111376384', '24', 'mapType', 'mapType', 3, 2, 3, '{\"required\":\"0\",\"defaultValue\":\"all\",\"rule\":\"\"}', '2023-03-01 10:41:41', '2023-03-01 10:42:21');
+INSERT INTO "public"."plugin_handle" VALUES ('1630760188111376384', '24', 'mapType', 'mapType', 3, 2, 3, '{"required":"0","defaultValue":"all","rule":""}', '2023-03-01 10:41:41', '2023-03-01 10:42:21');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330595', '25', 'strategyName', 'strategyName', 3, 2, 2, NULL, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330596', '25', 'decryptKey', 'decryptKey', 2, 2, 3, NULL, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330597', '25', 'encryptKey', 'encryptKey', 2, 2, 3, NULL, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330598', '25', 'fieldNames', 'fieldNames', 2, 2, 4, NULL, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330599', '25', 'way', 'way', 3, 2, 3, NULL, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
-INSERT INTO "public"."plugin_handle" VALUES ('1630768384280514560', '25', 'mapType', 'mapType', 3, 2, 4, '{\"required\":\"0\",\"defaultValue\":\"all\",\"rule\":\"\"}', '2023-03-01 11:14:15', '2023-03-01 11:15:14');
+INSERT INTO "public"."plugin_handle" VALUES ('1630768384280514560', '25', 'mapType', 'mapType', 3, 2, 4, '{"required":"0","defaultValue":"all","rule":""}', '2023-03-01 11:14:15', '2023-03-01 11:15:14');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330600', '6', 'gray', 'gray', 3, 1, 9, '{"required":"0","defaultValue":"false","placeholder":"gray","rule":""}', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330601', '6', 'group', 'group', 2, 1, 3, '{"required":"0","placeholder":"group","rule":""}', '2022-05-25 18:08:01', '2022-05-25 18:08:01');
 INSERT INTO "public"."plugin_handle" VALUES ('1529403902779330602', '6', 'loadBalance', 'loadStrategy', 3, 2, 0, NULL, '2022-05-25 18:08:01', '2022-05-25 18:08:01');
@@ -1320,7 +1331,7 @@ INSERT INTO "public"."plugin_handle" VALUES ('1678997769998467072', '42', 'clien
 INSERT INTO "public"."plugin_handle" VALUES ('1678997277012557824', '42', 'clientMaxConnections', 'clientMaxConnections', 2, 1, 6, '{"required":"0","defaultValue":"20","rule":""}');
 INSERT INTO "public"."plugin_handle" VALUES ('1678997557628272640', '42', 'clientPendingAcquireTimeout', 'clientPendingAcquireTimeout', 2, 1, 5, '{"required":"0","defaultValue":"5","rule":""}');
 INSERT INTO "public"."plugin_handle" VALUES ('1570591265492312085', '6', 'loadBalance', 'loadBalance', 3, 2, 3, '{"required":"0","defaultValue":"random","rule":""}', '2023-09-05 18:08:01', '2023-09-05 18:08:01');
-INSERT INTO "public"."plugin_handle" VALUES ('1570591265492312086', '44', 'defaultHandleJson', 'defaultHandleJson', 2, 3, 2, '{"required":"0","defaultValue":"{\"authorization\":\"test:test123\"}","placeholder":""}', '2022-05-25 18:02:53', '2022-05-25 18:02:53');
+INSERT INTO "public"."plugin_handle" VALUES ('1570591265492312086', '44', 'defaultHandleJson', 'defaultHandleJson', 2, 3, 2, '{"required":"0","defaultValue":"{"authorization":"test:test123"}","placeholder":""}', '2022-05-25 18:02:53', '2022-05-25 18:02:53');
 
 INSERT INTO "public"."plugin_handle" VALUES ('1721435546642157568', '45', 'host', 'host', 2, 3, 0, '{"required":"1","defaultValue":"127.0.0.1","rule":""}', '2023-11-06 15:53:11.704', '2023-11-07 13:31:41.010');
 INSERT INTO "public"."plugin_handle" VALUES ('1721435708743618560', '45', 'port', 'port', 1, 3, 0, '{"required":"1","defaultValue":"15672","rule":""}', '2023-11-06 15:53:50.352', '2023-11-07 13:31:41.016');
@@ -1355,6 +1366,15 @@ INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507018', '36', 'sampl
 INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507021', '14', 'rewriteContextPath', 'rewriteContextPath', 2, 2, 2, '{"required":"0","defaultValue":""}', '2024-02-07 14:31:49', '2024-02-07 14:31:49');
 INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507022', '14', 'percentage', 'percentage', 1, 2, 3, '{"required":"1","defaultValue":"100"}', '2024-02-07 14:31:49', '2024-02-07 14:31:49');
 INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507023', '3', 'rewriteMetaData', 'rewriteMetaData', 3, 2, 3, '{"required":"1","defaultValue":"false"}', '2024-02-07 14:31:49', '2024-02-07 14:31:49');
+
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507024', '8', 'registerType', 'registerType', 2, 3, 1, NULL, '2024-08-24 09:40:03.293', '2024-08-24 21:52:27.920');
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507025', '8', 'serverLists', 'serverLists', 2, 3, 2, NULL, '2024-08-24 21:52:51.179', '2024-08-24 21:53:27.483');
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507026', '8', 'props', 'props', 4, 3, 3, NULL, '2024-08-24 21:53:25.764', '2024-08-24 21:53:30.255');
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507027', '20', 'preserveHost', 'preserveHost', 3, 2, 0, '{"required":"0","defaultValue":"false","rule":""}', '2024-12-05 22:00:02.251', '2024-12-05 22:00:02.251');
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507028', '20', 'requestHeaderUniqueStrategy', 'requestHeaderUniqueStrategy', 2, 2, 1, '{"required":"0","rule":""}', '2024-12-13 22:36:54.299', '2024-12-13 22:36:54.299');
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507029', '20', 'requestUniqueHeaders', 'requestUniqueHeaders', 2, 2, 2, '{"required":"0","rule":""}', '2024-12-13 22:37:29.959', '2024-12-13 22:37:29.959');
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507030', '20', 'respHeaderUniqueStrategy', 'respHeaderUniqueStrategy', 2, 2, 3, '{"required":"0","rule":""}', '2024-12-13 22:37:48.239', '2024-12-13 22:37:48.239');
+INSERT INTO "public"."plugin_handle" VALUES ('1722804548510507031', '20', 'respUniqueHeaders', 'respUniqueHeaders', 2, 2, 4, '{"required":"0","rule":""}', '2024-12-13 22:38:05.726', '2024-12-13 22:38:05.726');
 
 -- ----------------------------
 -- Table structure for resource
@@ -1834,6 +1854,12 @@ INSERT INTO "public"."resource" VALUES ('1697145808210333696','16971419262477639
 INSERT INTO "public"."resource" VALUES ('1697146617513873408','1697141926247763968','SHENYU.BUTTON.SYSTEM.DELETE','','','',2,0,'delete',1,0,'system:alert:delete',1,'2023-08-31 15:17:39.731','2023-08-31 07:22:07.675');
 INSERT INTO "public"."resource" VALUES ('1697146860540235776','1697141926247763968','SHENYU.BUTTON.SYSTEM.EDIT','','','',2,0,'edit',1,0,'system:alert:edit',1,'2023-08-31 15:18:37.673','2023-08-31 07:18:37.675');
 
+INSERT INTO "public"."resource" VALUES ('1844015648095666176', '1346776175553376256', 'SHENYU.MENU.SYSTEM.MANAGMENT.SCALE', '', '/system/scale', '', 1, 4, 'sliders', 0, 0, '', 1, '2024-10-09 22:02:45.317000', '2024-10-10 14:33:43.897017');
+INSERT INTO "public"."resource" VALUES ('1844025735425183744', '1844015648095666176', 'SHENYU.BUTTON.SYSTEM.LIST', '', '', '', 2, 0, 'unordered-list', 1, 0, 'system:scale:list', 1, '2024-10-09 22:42:50.322000', '2024-10-09 22:42:50.325462');
+INSERT INTO "public"."resource" VALUES ('1844025850382667776', '1844015648095666176', 'SHENYU.BUTTON.SYSTEM.ADD', '', '', '', 2, 0, 'plus', 1, 0, 'system:scale:add', 1, '2024-10-09 22:43:17.731000', '2024-10-09 22:43:17.731661');
+INSERT INTO "public"."resource" VALUES ('1844025989214130176', '1844015648095666176', 'SHENYU.BUTTON.SYSTEM.DELETE', '', '', '', 2, 0, 'delete', 1, 0, 'system:scale:delete', 1, '2024-10-09 22:43:50.831000', '2024-10-09 22:43:50.831705');
+INSERT INTO "public"."resource" VALUES ('1844026099075534848', '1844015648095666176', 'SHENYU.BUTTON.SYSTEM.EDIT', '', '', '', 2, 0, 'edit', 1, 0, 'system:scale:edit', 1, '2024-10-09 22:44:17.024000', '2024-10-09 22:44:17.024555');
+
 -- ----------------------------
 -- Table structure for role
 -- ----------------------------
@@ -1871,6 +1897,7 @@ CREATE TABLE "public"."rule" (
   "enabled" int2 NOT NULL,
   "loged" int2 NOT NULL,
   "match_restful" int2 NOT NULL,
+  "namespace_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "sort" int4 NOT NULL,
   "handle" varchar(1024) COLLATE "pg_catalog"."default",
   "date_created" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
@@ -1884,6 +1911,7 @@ COMMENT ON COLUMN "public"."rule"."name" IS 'rule name';
 COMMENT ON COLUMN "public"."rule"."enabled" IS 'whether to open (0 close, 1 open) ';
 COMMENT ON COLUMN "public"."rule"."loged" IS 'whether to log or not (0 no print, 1 print) ';
 COMMENT ON COLUMN "public"."rule"."match_restful" IS 'whether to match restful(0 cache, 1 not cache)';
+COMMENT ON COLUMN "public"."rule"."namespace_id" IS 'namespace id';
 COMMENT ON COLUMN "public"."rule"."sort" IS 'sort';
 COMMENT ON COLUMN "public"."rule"."handle" IS 'processing logic (here for different plug-ins, there will be different fields to identify different processes, all data in JSON format is stored)';
 COMMENT ON COLUMN "public"."rule"."date_created" IS 'create time';
@@ -1937,6 +1965,7 @@ CREATE TABLE "public"."selector" (
   "loged" int2 NOT NULL,
   "continued" int2 NOT NULL,
   "match_restful" int2 NOT NULL,
+  "namespace_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
   "date_created" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
   "date_updated" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
 )
@@ -1952,6 +1981,7 @@ COMMENT ON COLUMN "public"."selector"."enabled" IS 'whether to open (0 close, 1 
 COMMENT ON COLUMN "public"."selector"."loged" IS 'whether to print the log (0 no print, 1 print) ';
 COMMENT ON COLUMN "public"."selector"."continued" IS 'whether to continue execution';
 COMMENT ON COLUMN "public"."selector"."match_restful" IS 'whether to match restful(0 cache, 1 not cache)';
+COMMENT ON COLUMN "public"."selector"."namespace_id" IS 'namespace id';
 COMMENT ON COLUMN "public"."selector"."date_created" IS 'create time';
 COMMENT ON COLUMN "public"."selector"."date_updated" IS 'update time';
 
@@ -2127,6 +2157,8 @@ INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737474', 'discoveryMode
 INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737475', 'discoveryMode', 'DISCOVERY_MODE', 'eureka', '{"eurekaClientRefreshInterval": "10", "eurekaClientRegistryFetchIntervalSeconds": "10"}', 'discoery mode to link eureka', 0, 1,'2023-03-01 10:48:49', '2023-03-01 10:48:49');
 INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737478', 'rewriteMetaData', 'REWRITE_META_DATA', 'true', 'true', '', 4, 1, '2024-02-07 14:31:49', '2024-02-07 14:31:49');
 INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737479', 'rewriteMetaData', 'REWRITE_META_DATA', 'false', 'false', '', 4, 1, '2024-02-07 14:31:49', '2024-02-07 14:31:49');
+INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737480', 'preserveHost', 'PRESERVE_HOST', 'true', 'true', '', 0, 1, '2024-02-07 14:31:49', '2024-02-07 14:31:49');
+INSERT INTO "public"."shenyu_dict" VALUES ('1679002911061737481', 'preserveHost', 'PRESERVE_HOST', 'false', 'false', '', 1, 1, '2024-02-07 14:31:49', '2024-02-07 14:31:49');
 
 -- ----------------------------
 -- Table structure for user_role
@@ -2334,6 +2366,7 @@ CREATE TABLE "public"."discovery" (
     "type" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
     "server_list" varchar(255) COLLATE "pg_catalog"."default",
     "props" text COLLATE "pg_catalog"."default",
+    "namespace_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
     "date_created" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
     "date_updated" timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
 )
@@ -2345,6 +2378,7 @@ COMMENT ON COLUMN "public"."discovery"."plugin_name" IS 'the plugin name';
 COMMENT ON COLUMN "public"."discovery"."type" IS 'local,zookeeper,etcd,consul,nacos';
 COMMENT ON COLUMN "public"."discovery"."server_list" IS 'register server url (,)';
 COMMENT ON COLUMN "public"."discovery"."props" IS 'the discovery pops (json) ';
+COMMENT ON COLUMN "public"."discovery"."namespace_id" IS 'namespace id';
 COMMENT ON COLUMN "public"."discovery"."date_created" IS 'create time';
 COMMENT ON COLUMN "public"."discovery"."date_updated" IS 'update time';
 
@@ -2404,6 +2438,7 @@ CREATE TABLE "public"."proxy_selector"
     "type"         varchar(128) COLLATE "pg_catalog"."default",
     "forward_port" int4 NOT NULL,
     "props"        text COLLATE "pg_catalog"."default",
+    "namespace_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
     "date_created" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "date_updated" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
@@ -2426,6 +2461,7 @@ CREATE TABLE "public"."discovery_upstream"
 (
     "id"           varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
     "discovery_handler_id" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+    "namespace_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
     "protocol"    varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
     "url"         varchar(128) COLLATE "pg_catalog"."default",
     "status"      int4  NOT NULL,
@@ -2437,6 +2473,7 @@ CREATE TABLE "public"."discovery_upstream"
 ;
 COMMENT ON COLUMN "public"."discovery_upstream"."id" IS 'primary key id';
 COMMENT ON COLUMN "public"."discovery_upstream"."discovery_handler_id" IS 'the discovery handler id';
+COMMENT ON COLUMN "public"."discovery_upstream"."namespace_id" IS 'namespace id';
 COMMENT ON COLUMN "public"."discovery_upstream"."protocol" IS 'for http, https, tcp, ws';
 COMMENT ON COLUMN "public"."discovery_upstream"."url" IS 'ip:port';
 COMMENT ON COLUMN "public"."discovery_upstream"."status" IS 'type (0, healthy, 1 unhealthy)';
@@ -2501,6 +2538,7 @@ CREATE TABLE "public"."alert_receiver"
     "match_all"            int4      NOT NULL,
     "labels"               varchar(255) COLLATE "pg_catalog"."default",
     "levels"               varchar(255) COLLATE "pg_catalog"."default",
+    "namespace_id"         varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
     "date_created"  timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
     "date_updated"  timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
 )
@@ -2510,17 +2548,252 @@ COMMENT ON COLUMN "public"."alert_receiver"."name" IS 'alarm receiver name';
 COMMENT ON COLUMN "public"."alert_receiver"."enable" IS 'enable or not';
 COMMENT ON COLUMN "public"."alert_receiver"."type" IS 'notice type 0-SMS 1-Email 2-webhook 3-WeChat Official Account 4-Enterprise WeChat Robot 5-DingTalk Robot 6-FeiShu Robot 7-Telegram Bot 8-SlackWebHook 9-Discord Bot 10-Enterprise WeChat';
 COMMENT ON COLUMN "public"."alert_receiver"."match_all" IS 'match all or not';
+COMMENT ON COLUMN "public"."alert_receiver"."namespace_id" IS 'namespace id';
 COMMENT ON COLUMN "public"."alert_receiver"."date_created" IS 'create time';
 COMMENT ON COLUMN "public"."alert_receiver"."date_updated" IS 'update time';
-DROP TABLE IF EXISTS "public"."int_lock";
-CREATE TABLE "public"."int_lock" (
+
+-- ----------------------------
+-- Table structure for shenyu_lock
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."shenyu_lock";
+CREATE TABLE "public"."shenyu_lock" (
     "lock_key" CHAR(36) NOT NULL,
     "region" VARCHAR(100) NOT NULL,
     "client_id" CHAR(36),
     "created_date" TIMESTAMP WITH TIME ZONE NOT NULL,
-    CONSTRAINT INT_LOCK_PK PRIMARY KEY ("lock_key", "region")
+    CONSTRAINT shenyu_lock_pk PRIMARY KEY ("lock_key", "region")
 );
-COMMENT ON COLUMN "public"."int_lock"."lock_key" IS 'lock_key';
-COMMENT ON COLUMN "public"."int_lock"."region" IS 'region';
-COMMENT ON COLUMN "public"."int_lock"."client_id" IS 'client_id';
-COMMENT ON COLUMN "public"."int_lock"."created_date" IS 'created_date';
+COMMENT ON COLUMN "public"."shenyu_lock"."lock_key" IS 'lock_key';
+COMMENT ON COLUMN "public"."shenyu_lock"."region" IS 'region';
+COMMENT ON COLUMN "public"."shenyu_lock"."client_id" IS 'client_id';
+COMMENT ON COLUMN "public"."shenyu_lock"."created_date" IS 'created_date';
+
+
+-- ----------------------------
+-- Table structure for cluster_master
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."cluster_master";
+CREATE TABLE "public"."cluster_master"
+(
+    "id"            varchar(128) COLLATE "pg_catalog"."default" NOT NULL PRIMARY KEY,
+    "master_host"   varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+    "master_port"   varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+    "context_path"  varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+    "date_created"  timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
+    "date_updated"  timestamp(6) NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
+)
+;
+COMMENT ON COLUMN "public"."cluster_master"."id" IS 'primary key id';
+COMMENT ON COLUMN "public"."cluster_master"."master_host" IS 'master host';
+COMMENT ON COLUMN "public"."cluster_master"."master_port" IS 'master port';
+COMMENT ON COLUMN "public"."cluster_master"."context_path" IS 'master context_path';
+COMMENT ON COLUMN "public"."cluster_master"."date_created" IS 'create time';
+COMMENT ON COLUMN "public"."cluster_master"."date_updated" IS 'update time';
+
+INSERT INTO "public"."resource" VALUES ('1792749362445840474', '1357956838021890048', 'SHENYU.MENU.SYSTEM.MANAGMENT.NAMESPACE', 'namespace', '/config/namespace', 'namespace', 1, 0, 'appstore', 0, 0, '', 1, '2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840475', '1792749362445840474', 'SHENYU.BUTTON.SYSTEM.ADD', '', '', '', 2, 0, '', 1, 0, 'system:namespace:add', 1, '2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840476', '1792749362445840474', 'SHENYU.BUTTON.SYSTEM.LIST', '', '', '', 2, 1, '', 1, 0, 'system:namespace:list', 1, '2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840477', '1792749362445840474', 'SHENYU.BUTTON.SYSTEM.DELETE', '', '', '', 2, 2, '', 1, 0, 'system:namespace:delete', 1,'2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840478', '1792749362445840474', 'SHENYU.BUTTON.SYSTEM.EDIT', '', '', '', 2, 3, '', 1, 0, 'system:namespace:edit', 1, '2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+
+INSERT INTO "public"."permission" VALUES ('1792779493541343252', '1346358560427216896', '1792749362445840474', '2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343253', '1346358560427216896', '1792749362445840475', '2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343254', '1346358560427216896', '1792749362445840476', '2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343255', '1346358560427216896', '1792749362445840477', '2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343256', '1346358560427216896', '1792749362445840478', '2024-06-22 17:00:00.000', '2024-06-22 17:00:00.000');
+
+
+
+DROP TABLE IF EXISTS "public"."namespace";
+CREATE TABLE "public"."namespace" (
+                                      "id" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+                                      "namespace_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+                                      "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+                                      "description" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+                                      "date_created" timestamp(3) NOT NULL DEFAULT now(),
+                                      "date_updated" timestamp(3) NOT NULL DEFAULT now(),
+                                      PRIMARY KEY ("id")
+);
+COMMENT ON COLUMN "public"."namespace"."id" IS 'Namespace primary key';
+COMMENT ON COLUMN "public"."namespace"."namespace_id" IS 'Namespace ID';
+COMMENT ON COLUMN "public"."namespace"."name" IS 'Namespace name';
+COMMENT ON COLUMN "public"."namespace"."description" IS 'Namespace description';
+COMMENT ON COLUMN "public"."namespace"."date_created" IS 'Creation time';
+COMMENT ON COLUMN "public"."namespace"."date_updated" IS 'Update time';
+
+
+INSERT INTO "public"."namespace" VALUES ('1', '649330b6-c2d7-4edc-be8e-8a54df9eb385', 'default', 'default-namespace', '2024-06-22 20:25:14.359', '2024-06-22 23:27:40.778');
+
+DROP TABLE IF EXISTS "public"."namespace_plugin_rel";
+CREATE TABLE "public"."namespace_plugin_rel" (
+                                          "id" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+                                          "namespace_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+                                          "plugin_id" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+                                          "config" text ,
+                                          "sort" int,
+                                          "enabled" smallint NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
+                                          "date_created" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                          "date_updated" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                          PRIMARY KEY (id)
+);
+
+COMMENT ON COLUMN "public"."namespace_plugin_rel"."id" IS 'Primary key ID';
+COMMENT ON COLUMN "public"."namespace_plugin_rel"."namespace_id" IS 'Namespace ID';
+COMMENT ON COLUMN "public"."namespace_plugin_rel"."plugin_id" IS 'Plugin ID';
+COMMENT ON COLUMN "public"."namespace_plugin_rel"."config" IS 'Plugin configuration';
+COMMENT ON COLUMN "public"."namespace_plugin_rel"."sort" IS 'Sort order';
+COMMENT ON COLUMN "public"."namespace_plugin_rel"."enabled" IS 'Whether the plugin is enabled (0 = not open, 1 = open)';
+COMMENT ON COLUMN "public"."namespace_plugin_rel"."date_created" IS 'Creation time';
+COMMENT ON COLUMN "public"."namespace_plugin_rel"."date_updated" IS 'Update time';
+
+
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822145','649330b6-c2d7-4edc-be8e-8a54df9eb385','1', NULL, 20, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822146','649330b6-c2d7-4edc-be8e-8a54df9eb385','10', NULL, 140, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822147','649330b6-c2d7-4edc-be8e-8a54df9eb385','11', '{"protocol":"zookeeper","register":"127.0.0.1:2181","threadpool":"shared"}', 310, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822148','649330b6-c2d7-4edc-be8e-8a54df9eb385','12', NULL, 310, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822149','649330b6-c2d7-4edc-be8e-8a54df9eb385','13', '{"multiSelectorHandle":"1","multiRuleHandle":"0","threadpool":"shared"}', 310, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822150','649330b6-c2d7-4edc-be8e-8a54df9eb385','14', NULL, 80, 1, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822151','649330b6-c2d7-4edc-be8e-8a54df9eb385','15', '{"multiSelectorHandle":"1","multiRuleHandle":"0","threadpool":"shared"}', 310, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822152','649330b6-c2d7-4edc-be8e-8a54df9eb385','16', NULL, 110, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822153','649330b6-c2d7-4edc-be8e-8a54df9eb385','17', '{"registerProtocol":"direct","registerAddress":"127.0.0.1:2181","corethreads":0,"threads":2147483647,"queues":0,"threadpool":"shared"}', 310, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822154','649330b6-c2d7-4edc-be8e-8a54df9eb385','18', NULL, 160, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822155','649330b6-c2d7-4edc-be8e-8a54df9eb385','19', '{"secretKey":"key"}', 30, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822156','649330b6-c2d7-4edc-be8e-8a54df9eb385','2', '{"model":"black"}', 50, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822157','649330b6-c2d7-4edc-be8e-8a54df9eb385','20', NULL, 120, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822158','649330b6-c2d7-4edc-be8e-8a54df9eb385','21', NULL, 40, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822159','649330b6-c2d7-4edc-be8e-8a54df9eb385','22', NULL, 70, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822160','649330b6-c2d7-4edc-be8e-8a54df9eb385','23', NULL, 220, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822161','649330b6-c2d7-4edc-be8e-8a54df9eb385','24', NULL, 100, 1, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822162','649330b6-c2d7-4edc-be8e-8a54df9eb385','25', NULL, 410, 1, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822163','649330b6-c2d7-4edc-be8e-8a54df9eb385','26', '{"multiSelectorHandle":"1"}', 200, 1, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822164','649330b6-c2d7-4edc-be8e-8a54df9eb385','27', NULL, 125, 1, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822165','649330b6-c2d7-4edc-be8e-8a54df9eb385','28', '{"port": 9500,"bossGroupThreadCount": 1,"maxPayloadSize": 65536,"workerGroupThreadCount": 12,"userName": "shenyu","password": "shenyu","isEncryptPassword": false,"encryptMode": "","leakDetectorLevel": "DISABLED"}', 125, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822166','649330b6-c2d7-4edc-be8e-8a54df9eb385','29', '{"topic":"shenyu-access-logging", "namesrvAddr": "localhost:9876","producerGroup":"shenyu-plugin-logging-rocketmq"}', 170, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822167','649330b6-c2d7-4edc-be8e-8a54df9eb385','3', NULL, 90, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822168','649330b6-c2d7-4edc-be8e-8a54df9eb385','30', '{"cacheType":"memory"}', 10, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822169','649330b6-c2d7-4edc-be8e-8a54df9eb385','31', NULL, 1, 0, '2022-06-16 14:40:35.000', '2022-06-16 14:40:55.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822170','649330b6-c2d7-4edc-be8e-8a54df9eb385','32', '{"host":"localhost", "port": "9200"}', 190, 0, '2022-06-19 22:00:00.000', '2022-06-19 22:00:00.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822171','649330b6-c2d7-4edc-be8e-8a54df9eb385','33', '{"host":"localhost", "port": "9092"}', 180, 0, '2022-07-04 22:00:00.000', '2022-07-02 22:00:00.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822172','649330b6-c2d7-4edc-be8e-8a54df9eb385','34', '{"projectName": "shenyu", "logStoreName": "shenyu-logstore", "topic": "shenyu-topic"}', 175, 0, '2022-06-30 21:00:00.000', '2022-06-30 21:00:00.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822173','649330b6-c2d7-4edc-be8e-8a54df9eb385','35', '{"topic":"shenyu-access-logging", "serviceUrl": "pulsar://localhost:6650"}', 185, 0, '2022-06-30 21:00:00.000', '2022-06-30 21:00:00.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822174','649330b6-c2d7-4edc-be8e-8a54df9eb385','36', '{"endpoint": "ap-guangzhou.cls.tencentcs.com", "topic": "shenyu-topic"}', 176, 0, '2022-06-30 21:00:00.000', '2022-06-30 21:00:00.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822175','649330b6-c2d7-4edc-be8e-8a54df9eb385','38', '{"host":"127.0.0.1","port":"8123","databse":"shenyu-gateway","username":"foo","password":"bar"}', 195, 0, '2022-06-30 21:00:00.000', '2022-06-30 21:00:00.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822176','649330b6-c2d7-4edc-be8e-8a54df9eb385','39', '{"endpoint":"http://localhost:8000"}', 40, 0, '2022-09-11 12:00:00.000', '2022-09-11 12:00:00.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822177','649330b6-c2d7-4edc-be8e-8a54df9eb385','4', '{"master":"mymaster","mode":"standalone","url":"192.168.1.1:6379","password":"abc"}', 60, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822178','649330b6-c2d7-4edc-be8e-8a54df9eb385','40', NULL, 150, 0, '2022-07-24 19:00:00.000', '2022-07-24 19:00:00.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822179','649330b6-c2d7-4edc-be8e-8a54df9eb385','42', NULL, 320, 1, '2023-05-30 18:02:53.000', '2022-05-30 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822180','649330b6-c2d7-4edc-be8e-8a54df9eb385','43', '{"totalSizeInBytes":"104857600","maxBlockMs":"0","ioThreadCount":"1","batchSizeThresholdInBytes":"524288","batchCountThreshold":"4096","lingerMs":"2000","retries":"100","baseRetryBackoffMs":"100","maxRetryBackoffMs":"100","enableLocalTest":"true","setGiveUpExtraLongSingleLog":"false"}', 177, 0, '2023-07-05 14:03:53.686', '2023-07-06 12:42:07.234');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822181','649330b6-c2d7-4edc-be8e-8a54df9eb385','44', '{"defaultHandleJson":"{\"authorization\":\"test:test123\"}"}', 150, 0, '2022-07-24 19:00:00.000', '2022-07-24 19:00:00.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822182','649330b6-c2d7-4edc-be8e-8a54df9eb385','45', '{"host":"127.0.0.1","port":5672,"password":"admin","username":"admin","exchangeName":"exchange.logging.plugin","queueName":"queue.logging.plugin","routingKey":"topic.logging","virtualHost":"/","exchangeType":"direct","durable":"true","exclusive":"false","autoDelete":"false"}', 171, 0, '2023-11-06 15:49:56.454', '2023-11-10 10:40:58.447');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822183','649330b6-c2d7-4edc-be8e-8a54df9eb385','5', '{"multiSelectorHandle":"1","multiRuleHandle":"0"}', 200, 1, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822184','649330b6-c2d7-4edc-be8e-8a54df9eb385','6', '{"register":"zookeeper://localhost:2181","multiSelectorHandle":"1","threadpool":"shared","corethreads":0,"threads":2147483647,"queues":0}', 310, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822185','649330b6-c2d7-4edc-be8e-8a54df9eb385','8', '{"enabled":false,"registerType":"eureka","serverLists":"http://localhost:8761/eureka","props":{}}', 200, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+INSERT INTO "public"."namespace_plugin_rel" VALUES ('1801816010882822186','649330b6-c2d7-4edc-be8e-8a54df9eb385','9', NULL, 130, 0, '2022-05-25 18:02:53.000', '2022-05-25 18:02:53.000');
+
+
+
+INSERT INTO "public"."resource" VALUES ('1792749362445840479', '1357956838021890048', 'SHENYU.MENU.SYSTEM.MANAGMENT.NAMESPACEPLUGIN', 'namespacePlugin', '/config/namespacePlugin', 'namespacePlugin', 1, 2, 'build', 0, 0, '', 1, '2024-06-25 18:02:53.000', '2024-06-25 18:02:53.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840480', '1792749362445840479', 'SHENYU.BUTTON.SYSTEM.LIST', '', '', '', 2, 0, '', 1, 0, 'system:namespacePlugin:list', 1, '2024-06-25 18:02:53.000', '2024-06-25 18:02:53.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840481', '1792749362445840479', 'SHENYU.BUTTON.SYSTEM.DELETE', '', '', '', 2, 1, '', 1, 0, 'system:namespacePlugin:delete', 1, '2024-06-25 18:02:53.000', '2024-06-25 18:02:53.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840482', '1792749362445840479', 'SHENYU.BUTTON.SYSTEM.ADD', '', '', '', 2, 2, '', 1, 0, 'system:namespacePlugin:add', 1, '2024-06-25 18:02:53.000', '2024-06-25 18:02:53.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840483', '1792749362445840479', 'SHENYU.BUTTON.SYSTEM.SYNCHRONIZE', '', '', '', 2, 3, '', 1, 0, 'system:namespacePlugin:modify', 1, '2024-06-25 18:02:53.000', '2024-06-25 18:02:53.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840484', '1792749362445840479', 'SHENYU.BUTTON.SYSTEM.ENABLE', '', '', '', 2, 4, '', 1, 0, 'system:namespacePlugin:disable', 1, '2024-06-25 18:02:53.000', '2024-06-25 18:02:53.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840485', '1792749362445840479', 'SHENYU.BUTTON.SYSTEM.EDIT', '', '', '', 2, 5, '', 1, 0, 'system:namespacePlugin:edit', 1,'2024-06-25 18:02:53.000', '2024-06-25 18:02:53.000');
+INSERT INTO "public"."resource" VALUES ('1792749362445840486', '1792749362445840479', 'SHENYU.BUTTON.SYSTEM.RESOURCE', '', '', '', 2, 6, '', 1, 0, 'system:namespacePlugin:resource', 1,'2024-06-25 18:02:53.000', '2024-06-25 18:02:53.000');
+
+
+INSERT INTO "public"."permission" VALUES ('1792779493541343260', '1346358560427216896', '1792749362445840479', '2024-06-25 20:00:00.000', '2024-06-25 20:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343261', '1346358560427216896', '1792749362445840480', '2024-06-25 20:00:00.000', '2024-06-25 20:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343262', '1346358560427216896', '1792749362445840481', '2024-06-25 20:00:00.000', '2024-06-25 20:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343263', '1346358560427216896', '1792749362445840482', '2024-06-25 20:00:00.000', '2024-06-25 20:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343264', '1346358560427216896', '1792749362445840483', '2024-06-25 20:00:00.000', '2024-06-25 20:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343265', '1346358560427216896', '1792749362445840484', '2024-06-25 20:00:00.000', '2024-06-25 20:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343266', '1346358560427216896', '1792749362445840485', '2024-06-25 20:00:00.000', '2024-06-25 20:00:00.000');
+INSERT INTO "public"."permission" VALUES ('1792779493541343267', '1346358560427216896', '1792749362445840486', '2024-06-25 20:00:00.000', '2024-06-25 20:00:00.000');
+
+
+-- ----------------------------
+-- Table structure for scale
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."scale_policy";
+CREATE TABLE IF NOT EXISTS "public"."scale_policy"
+(
+    "id"             varchar(128)   COLLATE "pg_catalog"."default" NOT NULL,
+    "sort"           int4           NOT NULL,
+    "status"         int2           NOT NULL,
+    "num"            int4           ,
+    "begin_time"     timestamp(6)   ,
+    "end_time"       timestamp(6)   ,
+    "date_created"   timestamp(3)   NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
+    "date_updated"   timestamp(3)   NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
+);
+COMMENT ON COLUMN "public"."scale_policy"."id" IS 'primary key id';
+COMMENT ON COLUMN "public"."scale_policy"."sort" IS 'sort';
+COMMENT ON COLUMN "public"."scale_policy"."status" IS 'status 1:enable 0:disable';
+COMMENT ON COLUMN "public"."scale_policy"."num" IS 'number of bootstrap';
+COMMENT ON COLUMN "public"."scale_policy"."begin_time" IS 'begin time';
+COMMENT ON COLUMN "public"."scale_policy"."end_time" IS 'end time';
+COMMENT ON COLUMN "public"."scale_policy"."date_created" IS 'create time';
+COMMENT ON COLUMN "public"."scale_policy"."date_updated" IS 'update time';
+
+INSERT INTO "public"."scale_policy" VALUES ('1', 3, 0, 10, NULL, NULL, '2024-07-31 20:00:00.000', '2024-07-31 20:00:00.000');
+INSERT INTO "public"."scale_policy" VALUES ('2', 2, 0, 10, '2024-07-31 20:00:00.000', '2024-08-01 20:00:00.000', '2024-07-31 20:00:00.000', '2024-07-31 20:00:00.000');
+INSERT INTO "public"."scale_policy" VALUES ('3', 1, 0, NULL, NULL, NULL, '2024-07-31 20:00:00.000', '2024-07-31 20:00:00.000');
+
+DROP TABLE IF EXISTS "public"."scale_rule";
+CREATE TABLE "public"."scale_rule"
+(
+    "id"             varchar(128)   COLLATE "pg_catalog"."default" NOT NULL,
+    "metric_name"    varchar(128)   COLLATE "pg_catalog"."default" NOT NULL,
+    "type"           int4           NOT NULL,
+    "sort"           int4           NOT NULL,
+    "status"         int2           NOT NULL,
+    "minimum"        varchar(128)   COLLATE "pg_catalog"."default",
+    "maximum"        varchar(128)   COLLATE "pg_catalog"."default",
+    "date_created"   timestamp(3)   NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
+    "date_updated"   timestamp(3)   NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
+);
+COMMENT ON COLUMN "public"."scale_rule"."id" IS 'primary key id';
+COMMENT ON COLUMN "public"."scale_rule"."metric_name" IS 'metric name';
+COMMENT ON COLUMN "public"."scale_rule"."type" IS 'type 0:shenyu 1:k8s 2:others';
+COMMENT ON COLUMN "public"."scale_rule"."sort" IS 'sort';
+COMMENT ON COLUMN "public"."scale_rule"."status" IS 'status 1:enable 0:disable';
+COMMENT ON COLUMN "public"."scale_rule"."minimum" IS 'minimum of metric';
+COMMENT ON COLUMN "public"."scale_rule"."maximum" IS 'maximum of metric';
+COMMENT ON COLUMN "public"."scale_rule"."date_created" IS 'create time';
+COMMENT ON COLUMN "public"."scale_rule"."date_updated" IS 'update time';
+
+DROP TABLE IF EXISTS "public"."scale_history";
+CREATE TABLE "public"."scale_history"
+(
+    "id"             varchar(128)   COLLATE "pg_catalog"."default" NOT NULL,
+    "config_id"      int4           NOT NULL,
+    "num"            int4           NOT NULL,
+    "action"         int4           NOT NULL,
+    "msg"            text           COLLATE "pg_catalog"."default",
+    "date_created"   timestamp(3)   NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
+    "date_updated"   timestamp(3)   NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
+);
+COMMENT ON COLUMN "public"."scale_history"."id" IS 'primary key id';
+COMMENT ON COLUMN "public"."scale_history"."config_id" IS '0:manual 1:period 2:dynamic';
+COMMENT ON COLUMN "public"."scale_history"."num" IS 'number of bootstrap';
+COMMENT ON COLUMN "public"."scale_history"."action" IS 'status 1:enable 0:disable';
+COMMENT ON COLUMN "public"."scale_history"."msg" IS 'message';
+COMMENT ON COLUMN "public"."scale_history"."date_created" IS 'create time';
+COMMENT ON COLUMN "public"."scale_history"."date_updated" IS 'update time';
+
+DROP TABLE IF EXISTS "public"."namespace_user_rel";
+CREATE TABLE "public"."namespace_user_rel"
+(
+    "id"             varchar(128)   COLLATE "pg_catalog"."default" NOT NULL,
+    "namespace_id"   varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+    "user_id"        varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+    "date_created"   timestamp(3)   NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone),
+    "date_updated"   timestamp(3)   NOT NULL DEFAULT timezone('UTC-8'::text, (now())::timestamp(0) without time zone)
+);
+COMMENT ON COLUMN "public"."namespace_user_rel"."id" IS 'primary key';
+COMMENT ON COLUMN "public"."namespace_user_rel"."namespace_id" IS 'namespace_id';
+COMMENT ON COLUMN "public"."namespace_user_rel"."user_id" IS 'user_id';
+COMMENT ON COLUMN "public"."namespace_user_rel"."date_created" IS 'create time';
+COMMENT ON COLUMN "public"."namespace_user_rel"."date_updated" IS 'update time';
+

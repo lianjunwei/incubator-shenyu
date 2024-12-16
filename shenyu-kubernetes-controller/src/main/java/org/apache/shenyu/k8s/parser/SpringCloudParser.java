@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.shenyu.common.config.ssl.SslCrtAndKeyStream;
 import org.apache.shenyu.common.dto.ConditionData;
@@ -58,7 +59,6 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -269,7 +269,7 @@ public class SpringCloudParser implements K8sResourceParser<V1Ingress> {
         if (Objects.nonNull(service.getPort())) {
             if (service.getPort().getNumber() != null && service.getPort().getNumber() > 0) {
                 return String.valueOf(service.getPort().getNumber());
-            } else if (service.getPort().getName() != null && !"".equals(service.getPort().getName().trim())) {
+            } else if (service.getPort().getName() != null && StringUtils.isNoneBlank(service.getPort().getName().trim())) {
                 return service.getPort().getName().trim();
             }
         }
@@ -382,8 +382,7 @@ public class SpringCloudParser implements K8sResourceParser<V1Ingress> {
             LOG.error("spring cloud metadata is error, please check spring cloud service. annotations: [{}]", annotations);
             throw new ShenyuException(annotations + " is is missing.");
         }
-        MetaData metaData = new MetaData();
-        metaData.builder()
+        MetaData metaData = MetaData.builder()
                 .appName(annotations.get(IngressConstants.PLUGIN_SPRING_CLOUD_APP_NAME))
                 .path(annotations.get(IngressConstants.PLUGIN_SPRING_CLOUD_PATH))
                 .rpcType(annotations.get(IngressConstants.PLUGIN_SPRING_CLOUD_RPC_TYPE))
@@ -393,6 +392,6 @@ public class SpringCloudParser implements K8sResourceParser<V1Ingress> {
                 .parameterTypes(annotations.getOrDefault(IngressConstants.PLUGIN_SPRING_CLOUD_PARAMENT_TYPE, ""))
                 .enabled(true)
                 .build();
-        return new IngressConfiguration(selectorData, Arrays.asList(ruleData), Arrays.asList(metaData));
+        return new IngressConfiguration(selectorData, Collections.singletonList(ruleData), Collections.singletonList(metaData));
     }
 }

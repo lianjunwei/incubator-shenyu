@@ -32,6 +32,7 @@ import org.apache.shenyu.admin.model.entity.PluginDO;
 import org.apache.shenyu.admin.model.entity.RuleConditionDO;
 import org.apache.shenyu.admin.model.entity.RuleDO;
 import org.apache.shenyu.admin.model.entity.SelectorDO;
+import org.apache.shenyu.admin.model.event.rule.RuleCreatedEvent;
 import org.apache.shenyu.admin.model.event.selector.BatchSelectorDeletedEvent;
 import org.apache.shenyu.admin.model.page.CommonPager;
 import org.apache.shenyu.admin.model.page.PageResultUtils;
@@ -125,6 +126,7 @@ public class RuleServiceImpl implements RuleService {
             addCondition(ruleDO, ruleDTO.getRuleConditions());
         }
         ruleEventPublisher.onRegister(ruleDO, ruleDTO.getRuleConditions());
+        ruleEventPublisher.publish(new RuleCreatedEvent(ruleDO, ruleDTO.getNamespaceId()));
         return ruleDO.getId();
     }
 
@@ -191,9 +193,9 @@ public class RuleServiceImpl implements RuleService {
     }
 
     /**
-     * find rule by id.
+     * find rule by id and namespaceId.
      *
-     * @param id primary key..
+     * @param id primary key.
      * @return {@linkplain RuleVO}
      */
     @Override
@@ -221,10 +223,20 @@ public class RuleServiceImpl implements RuleService {
     }
 
     @Override
+    public List<RuleData> listAllByNamespaceId(final String namespaceId) {
+        return this.buildRuleDataList(ruleMapper.selectAllByNamespaceId(namespaceId));
+    }
+
+    @Override
     public List<RuleVO> listAllData() {
         return this.buildRuleVOList(ruleMapper.selectAll());
     }
-
+    
+    @Override
+    public List<RuleVO> listAllDataByNamespaceId(final String namespaceId) {
+        return this.buildRuleVOList(ruleMapper.selectAllByNamespaceId(namespaceId));
+    }
+    
     @Override
     public List<RuleData> findBySelectorId(final String selectorId) {
         return this.buildRuleDataList(ruleMapper.findBySelectorId(selectorId));
@@ -288,30 +300,83 @@ public class RuleServiceImpl implements RuleService {
         }
         return ConfigImportResult.success(successCount);
     }
-
+    
+    @Override
+    public ConfigImportResult importData(final String namespace, final List<RuleDTO> ruleList) {
+        if (CollectionUtils.isEmpty(ruleList)) {
+            return ConfigImportResult.success();
+        }
+        
+        Map<String, List<RuleDO>> selectorRuleMap = ruleMapper
+                .selectAllByNamespaceId(namespace)
+                .stream()
+                .collect(Collectors.groupingBy(RuleDO::getSelectorId));
+        
+        int successCount = 0;
+        StringBuilder errorMsgBuilder = new StringBuilder();
+        for (RuleDTO ruleDTO : ruleList) {
+            String selectorId = ruleDTO.getSelectorId();
+            String ruleName = ruleDTO.getName();
+            Set<String> existRuleNameSet = selectorRuleMap
+                    .getOrDefault(selectorId, Lists.newArrayList())
+                    .stream()
+                    .map(RuleDO::getName)
+                    .collect(Collectors.toSet());
+            
+            if (existRuleNameSet.contains(ruleName)) {
+                errorMsgBuilder
+                        .append(ruleName)
+                        .append(",");
+                continue;
+            }
+            RuleDO ruleDO = RuleDO.buildRuleDO(ruleDTO);
+            final int ruleCount = ruleMapper.insertSelective(ruleDO);
+            addCondition(ruleDO, ruleDTO.getRuleConditions());
+            if (ruleCount > 0) {
+                successCount++;
+            }
+        }
+        if (StringUtils.isNotEmpty(errorMsgBuilder)) {
+            errorMsgBuilder.setLength(errorMsgBuilder.length() - 1);
+            return ConfigImportResult
+                    .fail(successCount, "import fail rule: " + errorMsgBuilder);
+        }
+        return ConfigImportResult.success(successCount);
+    }
+    
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Boolean enabled(final List<String> ids, final Boolean enabled) {
+    public Boolean enabledByIdsAndNamespaceId(final List<String> ids, final Boolean enabled, final String namespaceId) {
         ids.forEach(id -> {
             RuleDO ruleDO = ruleMapper.selectById(id);
             RuleDO before = JsonUtils.jsonToObject(JsonUtils.toJson(ruleDO), RuleDO.class);
             ruleDO.setEnabled(enabled);
             if (ruleMapper.updateEnable(id, enabled) > 0) {
-                ruleEventPublisher.onUpdated(ruleDO, before);
+                List<RuleConditionDO> conditionList = ruleConditionMapper.selectByQuery(new RuleConditionQuery(ruleDO.getId()));
+                List<RuleConditionDTO> conditions = conditionList.stream().map(item ->
+                        RuleConditionDTO.builder()
+                                .ruleId(item.getRuleId())
+                                .id(item.getId())
+                                .operator(item.getOperator())
+                                .paramName(item.getParamName())
+                                .paramValue(item.getParamValue())
+                                .paramType(item.getParamType())
+                                .build()).toList();
+                ruleEventPublisher.onUpdated(ruleDO, before, conditions, Collections.emptyList());
             }
         });
         return Boolean.TRUE;
     }
 
     /**
-     * delete rules.
+     * delete rules by ids and namespaceId.
      *
      * @param ids primary key.
      * @return rows
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int delete(final List<String> ids) {
+    public int deleteByIdsAndNamespaceId(final List<String> ids, final String namespaceId) {
         List<RuleDO> rules = ruleMapper.selectByIds(ids);
         final int deleteCount = ruleMapper.deleteByIds(ids);
         if (deleteCount > 0) {

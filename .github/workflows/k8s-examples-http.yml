@@ -34,7 +34,9 @@ jobs:
         run: |
           df --human-readable
           sudo apt clean
-          docker rmi $(docker image ls --all --quiet)
+          for image in $(docker image ls --all --quiet); do
+            docker rmi $image
+          done
           rm --recursive --force "$AGENT_TOOLSDIRECTORY"
           df --human-readable
       -
@@ -47,7 +49,7 @@ jobs:
         name: Install k8s
         if: steps.filter.outputs.changed == 'true'
         run: |
-          curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE=777 sh -
+          curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.29.6+k3s2 K3S_KUBECONFIG_MODE=777 sh -
           cat /etc/rancher/k3s/k3s.yaml
           mkdir -p ~/.kube
           cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
@@ -61,10 +63,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       -
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         if: steps.filter.outputs.changed == 'true'
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'temurin'
       -
         name: Build with Maven

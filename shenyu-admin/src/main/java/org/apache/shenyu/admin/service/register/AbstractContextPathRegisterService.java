@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.integration.support.locks.LockRegistry;
 import java.util.concurrent.locks.Lock;
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Objects;
 
 /**
@@ -41,6 +41,7 @@ public abstract class AbstractContextPathRegisterService extends AbstractShenyuC
 
     @Override
     public void registerContextPath(final MetaDataRegisterDTO dto) {
+        this.checkNamespacePluginRel(dto.getNamespaceId(), PluginEnum.CONTEXT_PATH.getName());
         String name = PluginEnum.CONTEXT_PATH.getName();
         String contextPath = PathUtils.decoratorContextPath(dto.getContextPath());
         String key = LOCK_KEY_PREFIX + contextPath;

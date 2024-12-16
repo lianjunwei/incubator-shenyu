@@ -58,6 +58,31 @@ public final class AdminConstants {
     public static final String SYS_PLUGIN_ID_NOT_EXIST = "The plugin(s) does not exist！";
 
     /**
+     * The constant NAMESPACE_PLUGIN_EXIST.
+     */
+    public static final String NAMESPACE_PLUGIN_EXIST = "The plugin of namespace is exist！";
+
+    /**
+     * The constant NAMESPACE_USER_EXIST.
+     */
+    public static final String NAMESPACE_USER_EXIST = "The user namespace rel is exist！";
+
+    /**
+     * The constant SYS_NAMESPACE_ID_NOT_EXIST.
+     */
+    public static final String SYS_NAMESPACE_ID_NOT_EXIST = "The namespace(s) does not exist！";
+
+    /**
+     * The constant NAMESPACE_PLUGIN_NOT_DELETE.
+     */
+    public static final String NAMESPACE_PLUGIN_NOT_DELETE = "The plugin that exists under a certain namespace cannot be deleted.";
+
+    /**
+     * The constant SYS_DEFAULT_NAMESPACE_ID_DELETE.
+     */
+    public static final String SYS_DEFAULT_NAMESPACE_ID_DELETE = "The default namespace cannot delete！";
+
+    /**
      * The constant SYS_API_ID_NOT_EXIST.
      */
     public static final String SYS_API_ID_NOT_EXIST = "The api(s) does not exist！";
@@ -268,12 +293,16 @@ public final class AdminConstants {
 
     public static final String PLUGIN_INTERFACE_PATH = "org.apache.shenyu.plugin.api.ShenyuPlugin";
 
-    public static final String PLUGIN_ABSTRACR_PATH = "org.apache.shenyu.plugin.base.AbstractShenyuPlugin";
+    public static final String PLUGIN_ABSTRACT_PATH = "org.apache.shenyu.plugin.base.AbstractShenyuPlugin";
 
     public static final String PROXY_SELECTOR_NAME_IS_EXIST = "The proxy selector name already exists and can't be added repeatedly!";
 
     public static final String PROXY_SELECTOR_ID_IS_NOT_EXIST = "The proxy selector(s) does not exist";
 
     public static final long THE_ONE_DAY_MILLIS_TIME = 24 * 60 * 60 * 1000L;
+
+    public static final long FIVE_SECONDS_MILLIS_TIME = 5 * 1000L;
+
+    public static final long TEN_SECONDS_MILLIS_TIME = 10 * 1000L;
 }
 

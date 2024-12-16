@@ -17,9 +17,12 @@
 
 package org.apache.shenyu.admin.controller;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.apache.shenyu.admin.aspect.annotation.RestApi;
 import org.apache.shenyu.admin.mapper.SelectorMapper;
 import org.apache.shenyu.admin.model.dto.BatchCommonDTO;
+import org.apache.shenyu.admin.model.dto.BatchNamespaceCommonDTO;
 import org.apache.shenyu.admin.model.dto.SelectorDTO;
 import org.apache.shenyu.admin.model.page.CommonPager;
 import org.apache.shenyu.admin.model.page.PageCondition;
@@ -41,12 +44,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import java.util.List;
-
 /**
  * this is selector controller.
  */
@@ -66,16 +63,22 @@ public class SelectorController implements PagedController<SelectorQueryConditio
      * @param name        selector name.
      * @param currentPage current page.
      * @param pageSize    page size.
+     * @param namespaceId namespaceId.
      * @return {@linkplain ShenyuAdminResult}
      */
     @GetMapping("")
     public AdminResult<CommonPager<SelectorVO>> querySelectors(final String pluginId, final String name,
-                                                                @RequestParam @NotNull final Integer currentPage,
-                                                                @RequestParam @NotNull final Integer pageSize) {
+                                                               @RequestParam @NotNull final Integer currentPage,
+                                                               @RequestParam @NotNull final Integer pageSize,
+                                                               @RequestParam(value = "namespaceId", required = false) final String namespaceId
+    ) {
         final SelectorQueryCondition condition = new SelectorQueryCondition();
         condition.setUserId(SessionUtil.visitor().getUserId());
         condition.setPlugin(ListUtil.of(pluginId));
         condition.setKeyword(name);
+        if (namespaceId != null) {
+            condition.setNamespaceId(namespaceId);
+        }
         return searchAdaptor(new PageCondition<>(currentPage, pageSize, condition));
     }
 
@@ -87,8 +90,7 @@ public class SelectorController implements PagedController<SelectorQueryConditio
      */
     @GetMapping("/{id}")
     public ShenyuAdminResult detailSelector(@PathVariable("id") @Valid
-                                            @Existed(provider = SelectorMapper.class,
-                                                    message = "selector is not existed") final String id) {
+                                            @Existed(provider = SelectorMapper.class, message = "selector is not existed") final String id) {
         SelectorVO selectorVO = selectorService.findById(id);
         return ShenyuAdminResult.success(ShenyuResultMessage.DETAIL_SUCCESS, selectorVO);
     }
@@ -114,8 +116,7 @@ public class SelectorController implements PagedController<SelectorQueryConditio
      */
     @PutMapping("/{id}")
     public ShenyuAdminResult updateSelector(@PathVariable("id") @Valid
-                                            @Existed(provider = SelectorMapper.class,
-                                                    message = "selector is not existed") final String id,
+                                            @Existed(provider = SelectorMapper.class, message = "selector is not existed") final String id,
                                             @Valid @RequestBody final SelectorDTO selectorDTO) {
         selectorDTO.setId(id);
         Integer updateCount = selectorService.createOrUpdate(selectorDTO);
@@ -130,7 +131,7 @@ public class SelectorController implements PagedController<SelectorQueryConditio
      */
     @PostMapping("/batchEnabled")
     public ShenyuAdminResult batchEnabled(@Valid @RequestBody final BatchCommonDTO batchCommonDTO) {
-        if (!selectorService.enabled(batchCommonDTO.getIds(), batchCommonDTO.getEnabled())) {
+        if (!selectorService.enabledByIdsAndNamespaceId(batchCommonDTO.getIds(), batchCommonDTO.getEnabled(), batchCommonDTO.getNamespaceId())) {
             return ShenyuAdminResult.error(ShenyuResultMessage.NOT_FOUND_EXCEPTION);
         }
         return ShenyuAdminResult.success(ShenyuResultMessage.ENABLE_SUCCESS);
@@ -139,12 +140,12 @@ public class SelectorController implements PagedController<SelectorQueryConditio
     /**
      * delete Selectors.
      *
-     * @param ids primary key.
+     * @param batchNamespaceCommonDTO batchNamespaceCommonDTO.
      * @return {@linkplain ShenyuAdminResult}
      */
     @DeleteMapping("/batch")
-    public ShenyuAdminResult deleteSelector(@RequestBody @NotEmpty final List<@NotBlank String> ids) {
-        Integer deleteCount = selectorService.delete(ids);
+    public ShenyuAdminResult deleteSelector(@Valid @RequestBody final BatchNamespaceCommonDTO batchNamespaceCommonDTO) {
+        Integer deleteCount = selectorService.deleteByNamespaceId(batchNamespaceCommonDTO.getIds(), batchNamespaceCommonDTO.getNamespaceId());
         return ShenyuAdminResult.success(ShenyuResultMessage.DELETE_SUCCESS, deleteCount);
     }
 

@@ -38,12 +38,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -72,7 +75,7 @@ public class LoggingConsolePlugin extends AbstractShenyuPlugin {
     private static final Logger LOG = LoggerFactory.getLogger(LoggingConsolePlugin.class);
 
     private static String dataDesensitizeAlg = DataDesensitizeEnum.CHARACTER_REPLACE.getDataDesensitizeAlg();
-    
+
     @Override
     protected Mono<Void> doExecute(final ServerWebExchange exchange, final ShenyuPluginChain chain,
                                    final SelectorData selector, final RuleData rule) {
@@ -97,8 +100,15 @@ public class LoggingConsolePlugin extends AbstractShenyuPlugin {
                 .append(getRequestMethod(request, desensitized, keyWordMatch)).append(System.lineSeparator())
                 .append(getRequestHeaders(request, desensitized, keyWordMatch)).append(System.lineSeparator())
                 .append(getQueryParams(request, desensitized, keyWordMatch)).append(System.lineSeparator());
-        return chain.execute(exchange.mutate().request(new LoggingServerHttpRequest(request, requestInfo, desensitized, keyWordMatch))
-                .response(new LoggingServerHttpResponse(exchange.getResponse(), requestInfo, desensitized, keyWordMatch)).build());
+        final LoggingServerHttpResponse loggingServerHttpResponse = new LoggingServerHttpResponse(exchange.getResponse(), requestInfo, desensitized, keyWordMatch);
+        try {
+            return chain.execute(exchange.mutate().request(new LoggingServerHttpRequest(request, requestInfo, desensitized, keyWordMatch))
+                            .response(loggingServerHttpResponse).build())
+                    .doOnError(loggingServerHttpResponse::logError);
+        } catch (Exception e) {
+            loggingServerHttpResponse.logError(e);
+            throw e;
+        }
     }
 
     @Override
@@ -135,10 +145,10 @@ public class LoggingConsolePlugin extends AbstractShenyuPlugin {
             logInfo.append("[Query Params Start]").append(System.lineSeparator());
             params.forEach((key, value) -> {
                 // desensitized query parameters
-                value = Lists.newArrayList(value);
-                DataDesensitizeUtils.desensitizeList(desensitized, key, value, keyWordMatch, dataDesensitizeAlg);
+                List<String> list = Lists.newArrayList(value);
+                DataDesensitizeUtils.desensitizeList(desensitized, key, list, keyWordMatch, dataDesensitizeAlg);
                 logInfo.append(key).append(": ")
-                        .append(StringUtils.join(value, ",")).append(System.lineSeparator());
+                        .append(StringUtils.join(list, ",")).append(System.lineSeparator());
             });
             logInfo.append("[Query Params End]").append(System.lineSeparator());
         }
@@ -175,11 +185,11 @@ public class LoggingConsolePlugin extends AbstractShenyuPlugin {
     }
 
     static class LoggingServerHttpRequest extends ServerHttpRequestDecorator {
-        
+
         private final StringBuilder logInfo;
-        
+
         private final Boolean desensitized;
-        
+
         private final KeyWordMatch keyWordMatch;
 
         LoggingServerHttpRequest(final ServerHttpRequest delegate, final StringBuilder logInfo,
@@ -194,7 +204,11 @@ public class LoggingConsolePlugin extends AbstractShenyuPlugin {
         @NonNull
         public Flux<DataBuffer> getBody() {
             BodyWriter writer = new BodyWriter();
-            return super.getBody().doOnNext(dataBuffer -> writer.write(dataBuffer.asByteBuffer().asReadOnlyBuffer())).doFinally(signal -> {
+            return super.getBody().doOnNext(dataBuffer -> {
+                try (DataBuffer.ByteBufferIterator bufferIterator = dataBuffer.readableByteBuffers()) {
+                    bufferIterator.forEachRemaining(byteBuffer -> writer.write(byteBuffer.asReadOnlyBuffer()));
+                }
+            }).doFinally(signal -> {
                 if (!writer.isEmpty()) {
                     logInfo.append("[Request Body Start]").append(System.lineSeparator());
                     // desensitize data
@@ -214,9 +228,9 @@ public class LoggingConsolePlugin extends AbstractShenyuPlugin {
         private final StringBuilder logInfo;
 
         private final ServerHttpResponse serverHttpResponse;
-        
+
         private final Boolean desensitized;
-        
+
         private final KeyWordMatch keyWordMatch;
 
         LoggingServerHttpResponse(final ServerHttpResponse delegate, final StringBuilder logInfo,
@@ -251,7 +265,11 @@ public class LoggingConsolePlugin extends AbstractShenyuPlugin {
                 });
             }
             BodyWriter writer = new BodyWriter();
-            return Flux.from(body).doOnNext(buffer -> writer.write(buffer.asByteBuffer().asReadOnlyBuffer())).doFinally(signal -> {
+            return Flux.from(body).doOnNext(buffer -> {
+                try (DataBuffer.ByteBufferIterator bufferIterator = buffer.readableByteBuffers()) {
+                    bufferIterator.forEachRemaining(byteBuffer -> writer.write(byteBuffer.asReadOnlyBuffer()));
+                }
+            }).doFinally(signal -> {
                 logInfo.append("[Response Body Start]").append(System.lineSeparator());
                 // desensitize data
                 String responseBody = DataDesensitizeUtils.desensitizeBody(desensitized, writer.output(), keyWordMatch, dataDesensitizeAlg);
@@ -260,6 +278,22 @@ public class LoggingConsolePlugin extends AbstractShenyuPlugin {
                 // when response, print all request info.
                 print(logInfo.toString());
             });
+        }
+
+        /**
+         * access error.
+         *
+         * @param throwable Exception occurred。
+         */
+        public void logError(final Throwable throwable) {
+            HttpStatusCode httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+            if (throwable instanceof ResponseStatusException) {
+                httpStatus = ((ResponseStatusException) throwable).getStatusCode();
+            }
+            logInfo.append("Response Code: ").append(httpStatus).append(System.lineSeparator());
+            logInfo.append(getResponseHeaders()).append(System.lineSeparator());
+            logInfo.append("ERROR: ").append(System.lineSeparator());
+            logInfo.append(throwable.getMessage()).append(System.lineSeparator());
         }
 
         private String getResponseHeaders() {
@@ -295,7 +329,7 @@ public class LoggingConsolePlugin extends AbstractShenyuPlugin {
         String output() {
             try {
                 isClosed.compareAndSet(false, true);
-                return new String(stream.toByteArray(), StandardCharsets.UTF_8);
+                return stream.toString(StandardCharsets.UTF_8);
             } catch (Exception e) {
                 LOG.error("Write failed: ", e);
                 return "Write failed: " + e.getMessage();

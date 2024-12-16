@@ -26,6 +26,7 @@ import com.netflix.appinfo.MyDataCenterInstanceConfig;
 import com.netflix.appinfo.RefreshableInstanceConfig;
 import com.netflix.appinfo.UniqueIdentifier;
 import com.netflix.appinfo.providers.Archaius1VipAddressResolver;
+import com.netflix.appinfo.providers.EurekaConfigBasedInstanceInfoProvider;
 import com.netflix.discovery.DefaultEurekaClientConfig;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.EurekaClient;
@@ -36,10 +37,15 @@ import org.apache.shenyu.registry.api.entity.InstanceEntity;
 import org.apache.shenyu.spi.Join;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cloud.netflix.eureka.http.DefaultEurekaClientHttpRequestFactorySupplier;
+import org.springframework.cloud.netflix.eureka.http.RestTemplateDiscoveryClientOptionalArgs;
+import org.springframework.cloud.netflix.eureka.http.RestTemplateTransportClientFactories;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Join
@@ -53,6 +59,8 @@ public class EurekaInstanceRegisterRepository implements ShenyuInstanceRegisterR
 
     private EurekaInstanceConfig eurekaInstanceConfig;
 
+    private RestTemplateDiscoveryClientOptionalArgs restTemplateDiscoveryClientOptionalArgs;
+
     @Override
     public void init(final RegisterConfig config) {
         eurekaInstanceConfig = new MyDataCenterInstanceConfig();
@@ -61,7 +69,29 @@ public class EurekaInstanceRegisterRepository implements ShenyuInstanceRegisterR
             public List<String> getEurekaServerServiceUrls(final String zone) {
                 return Arrays.asList(config.getServerLists().split(","));
             }
+
+            @Override
+            public boolean shouldFetchRegistry() {
+                return false;
+            }
         };
+
+        DefaultEurekaClientConfig eurekaClientNotRegisterEurekaConfig = new DefaultEurekaClientConfig() {
+            @Override
+            public List<String> getEurekaServerServiceUrls(final String zone) {
+                return Arrays.asList(config.getServerLists().split(","));
+            }
+
+            @Override
+            public boolean shouldRegisterWithEureka() {
+                return false;
+            }
+        };
+        restTemplateDiscoveryClientOptionalArgs
+                = new RestTemplateDiscoveryClientOptionalArgs(new DefaultEurekaClientHttpRequestFactorySupplier());
+        eurekaClient = new DiscoveryClient(new ApplicationInfoManager(eurekaInstanceConfig,
+                new EurekaConfigBasedInstanceInfoProvider(eurekaInstanceConfig).get()), eurekaClientNotRegisterEurekaConfig,
+                new RestTemplateTransportClientFactories(restTemplateDiscoveryClientOptionalArgs));
     }
 
     @Override
@@ -79,7 +109,8 @@ public class EurekaInstanceRegisterRepository implements ShenyuInstanceRegisterR
                 .setDurationInSecs(eurekaInstanceConfig.getLeaseExpirationDurationInSeconds());
         instanceInfo.setLeaseInfo(leaseInfoBuilder.build());
         ApplicationInfoManager applicationInfoManager = new ApplicationInfoManager(eurekaInstanceConfig, instanceInfo);
-        eurekaClient = new DiscoveryClient(applicationInfoManager, eurekaClientConfig);
+        new DiscoveryClient(applicationInfoManager, eurekaClientConfig,
+                new RestTemplateTransportClientFactories(restTemplateDiscoveryClientOptionalArgs));
     }
 
     /**
@@ -167,13 +198,24 @@ public class EurekaInstanceRegisterRepository implements ShenyuInstanceRegisterR
         List<InstanceInfo> instances = eurekaClient.getInstancesByVipAddressAndAppName(null, selectKey, true);
         return instances.stream()
                 .map(i -> InstanceEntity.builder()
-                        .appName(i.getAppName()).host(i.getHostName()).port(i.getPort())
+                        .appName(i.getAppName()).host(i.getHostName()).port(i.getPort()).uri(getURI(i))
                         .build()
                 ).collect(Collectors.toList());
     }
 
+    private URI getURI(final InstanceInfo instance) {
+        boolean secure = instance.isPortEnabled(InstanceInfo.PortType.SECURE);
+        String scheme = secure ? "https" : "http";
+        int port = instance.getPort();
+        if (port <= 0) {
+            port = secure ? 443 : 80;
+        }
+        String uri = String.format("%s://%s:%s", scheme, instance.getIPAddr(), port);
+        return URI.create(uri);
+    }
+
     @Override
     public void close() {
-        eurekaClient.shutdown();
+        Optional.ofNullable(eurekaClient).ifPresent(EurekaClient::shutdown);
     }
 }

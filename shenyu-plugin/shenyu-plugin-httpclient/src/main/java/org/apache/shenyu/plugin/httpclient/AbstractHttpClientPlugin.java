@@ -21,8 +21,11 @@ import com.google.common.collect.Sets;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutException;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shenyu.common.constant.Constants;
+import org.apache.shenyu.common.enums.HeaderUniqueStrategyEnum;
 import org.apache.shenyu.common.enums.RetryEnum;
+import org.apache.shenyu.common.enums.UniqueHeaderEnum;
 import org.apache.shenyu.common.exception.ShenyuException;
 import org.apache.shenyu.common.utils.LogUtils;
 import org.apache.shenyu.loadbalancer.cache.UpstreamCacheManager;
@@ -35,7 +38,6 @@ import org.apache.shenyu.plugin.api.result.ShenyuResultEnum;
 import org.apache.shenyu.plugin.api.result.ShenyuResultWrap;
 import org.apache.shenyu.plugin.api.utils.RequestUrlUtils;
 import org.apache.shenyu.plugin.api.utils.WebFluxResultUtils;
-import org.apache.shenyu.plugin.httpclient.config.DuplicateResponseHeaderProperties.DuplicateResponseHeaderStrategy;
 import org.apache.shenyu.plugin.httpclient.exception.ShenyuTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +54,7 @@ import reactor.util.retry.RetryBackoffSpec;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -82,7 +85,7 @@ public abstract class AbstractHttpClientPlugin<R> implements ShenyuPlugin {
         final int retryTimes = (int) Optional.ofNullable(exchange.getAttribute(Constants.HTTP_RETRY)).orElse(0);
         final String retryStrategy = (String) Optional.ofNullable(exchange.getAttribute(Constants.RETRY_STRATEGY)).orElseGet(RetryEnum.CURRENT::getName);
         LogUtils.debug(LOG, () -> String.format("The request urlPath is: %s, retryTimes is : %s, retryStrategy is : %s", uri, retryTimes, retryStrategy));
-        final Mono<R> response = doRequest(exchange, exchange.getRequest().getMethodValue(), uri, exchange.getRequest().getBody())
+        final Mono<R> response = doRequest(exchange, exchange.getRequest().getMethod().name(), uri, exchange.getRequest().getBody())
                 .timeout(duration, Mono.error(() -> new TimeoutException("Response took longer than timeout: " + duration)))
                 .doOnError(e -> LOG.error(e.getMessage(), e));
         if (RetryEnum.CURRENT.getName().equals(retryStrategy)) {
@@ -154,7 +157,7 @@ public abstract class AbstractHttpClientPlugin<R> implements ShenyuPlugin {
             final URI newUri = RequestUrlUtils.buildRequestUri(exchange, upstream.buildDomain());
             // in order not to affect the next retry call, newUri needs to be excluded
             exclude.add(newUri);
-            return doRequest(exchange, exchange.getRequest().getMethodValue(), newUri, exchange.getRequest().getBody())
+            return doRequest(exchange, exchange.getRequest().getMethod().name(), newUri, exchange.getRequest().getBody())
                     .timeout(duration, Mono.error(() -> new TimeoutException("Response took longer than timeout: " + duration)))
                     .doOnError(e -> LOG.error(e.getMessage(), e));
         });
@@ -171,8 +174,23 @@ public abstract class AbstractHttpClientPlugin<R> implements ShenyuPlugin {
      */
     protected abstract Mono<R> doRequest(ServerWebExchange exchange, String httpMethod,
                                          URI uri, Flux<DataBuffer> body);
+
+    protected void duplicateHeaders(final ServerWebExchange exchange, final HttpHeaders headers, final UniqueHeaderEnum uniqueHeaderEnum) {
+        final String duplicateHeader = exchange.getAttribute(uniqueHeaderEnum.getName());
+        if (StringUtils.isEmpty(duplicateHeader)) {
+            return;
+        }
+        List<String> duplicateHeaderList = Arrays.asList(StringUtils.split(duplicateHeader, Constants.SEPARATOR_CHARS));
+        if (CollectionUtils.isEmpty(duplicateHeaderList)) {
+            return;
+        }
+        HeaderUniqueStrategyEnum strategy = exchange.getAttributeOrDefault(uniqueHeaderEnum.getStrategy(), HeaderUniqueStrategyEnum.RETAIN_FIRST);
+        for (String headerKey : duplicateHeaderList) {
+            this.duplicate(headers, headerKey, strategy);
+        }
+    }
     
-    protected void duplicateHeaders(final HttpHeaders headers, final String header, final DuplicateResponseHeaderStrategy strategy) {
+    protected void duplicate(final HttpHeaders headers, final String header, final HeaderUniqueStrategyEnum strategy) {
         List<String> headerValues = headers.get(header);
         if (Objects.isNull(headerValues) || headerValues.size() <= 1) {
             return;

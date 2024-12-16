@@ -46,7 +46,7 @@ public class EtcdClient {
 
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EtcdClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EtcdClient.class);
 
     private final Client client;
 
@@ -66,22 +66,22 @@ public class EtcdClient {
     private void initLease() {
         try {
             this.globalLeaseId = client.getLeaseClient().grant(ttl).get().getID();
-            client.getLeaseClient().keepAlive(globalLeaseId, new StreamObserver<LeaseKeepAliveResponse>() {
+            client.getLeaseClient().keepAlive(globalLeaseId, new StreamObserver<>() {
                 @Override
                 public void onNext(final LeaseKeepAliveResponse leaseKeepAliveResponse) {
                 }
-
+                
                 @Override
                 public void onError(final Throwable throwable) {
-                    LOGGER.error("keep alive error", throwable);
+                    LOG.error("keep alive error", throwable);
                 }
-
+                
                 @Override
                 public void onCompleted() {
                 }
             });
         } catch (InterruptedException | ExecutionException e) {
-            LOGGER.error("initLease error.", e);
+            LOG.error("initLease error.", e);
         }
     }
 
@@ -125,7 +125,7 @@ public class EtcdClient {
         try {
             return this.client.getKVClient().get(bytesOf(key), getOption).get();
         } catch (ExecutionException | InterruptedException e) {
-            LOGGER.error("etcd getRange key {} error {}", key, e);
+            LOG.error("etcd getRange key {} error", key, e);
             throw new ShenyuException(e);
         }
     }
@@ -158,7 +158,7 @@ public class EtcdClient {
                     PutOption.newBuilder().withLeaseId(globalLeaseId).build())
                     .get(timeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LOGGER.error("putEphemeral(key:{},value:{}) error.", key, value, e);
+            LOG.error("putEphemeral(key:{},value:{}) error.", key, value, e);
         }
     }
 }

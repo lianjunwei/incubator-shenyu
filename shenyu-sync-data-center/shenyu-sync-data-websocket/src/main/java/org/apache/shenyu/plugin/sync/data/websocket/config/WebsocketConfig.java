@@ -17,6 +17,7 @@
 
 package org.apache.shenyu.plugin.sync.data.websocket.config;
 
+import java.util.List;
 import java.util.Objects;
 
 public class WebsocketConfig {
@@ -25,7 +26,7 @@ public class WebsocketConfig {
      * if have more shenyu admin url,please config like this.
      * 127.0.0.1:8888,127.0.0.1:8889
      */
-    private String urls;
+    private List<String> urls;
 
     /**
      * allowOrigin.
@@ -37,7 +38,7 @@ public class WebsocketConfig {
      *
      * @return urls
      */
-    public String getUrls() {
+    public List<String> getUrls() {
         return urls;
     }
 
@@ -46,7 +47,7 @@ public class WebsocketConfig {
      *
      * @param urls urls
      */
-    public void setUrls(final String urls) {
+    public void setUrls(final List<String> urls) {
         this.urls = urls;
     }
 
@@ -65,7 +66,7 @@ public class WebsocketConfig {
     public void setAllowOrigin(final String allowOrigin) {
         this.allowOrigin = allowOrigin;
     }
-
+    
     @Override
     public boolean equals(final Object o) {
         if (this == o) {
@@ -75,7 +76,8 @@ public class WebsocketConfig {
             return false;
         }
         WebsocketConfig that = (WebsocketConfig) o;
-        return Objects.equals(urls, that.urls) && Objects.equals(allowOrigin, that.allowOrigin);
+        return Objects.equals(urls, that.urls)
+                && Objects.equals(allowOrigin, that.allowOrigin);
     }
 
     @Override

@@ -76,6 +76,14 @@ public interface DiscoveryUpstreamService {
     List<DiscoveryUpstreamVO> listAllData();
 
     /**
+     * list all data.
+     *
+     * @param namespaceId namespaceId
+     * @return DiscoveryUpstreamVO
+     */
+    List<DiscoveryUpstreamVO> listAllDataByNamespaceId(String namespaceId);
+
+    /**
      * refresh and push event.
      *
      * @param selectorId selectorId
@@ -99,10 +107,30 @@ public interface DiscoveryUpstreamService {
      */
     void deleteBySelectorIdAndUrl(String selectorId, String url);
 
+
+    /**
+     * changeStatusBySelectorIdAndUrl.
+     *
+     * @param selectorId selectorId
+     * @param url        url
+     * @param enabled    enabled
+     */
+    void changeStatusBySelectorIdAndUrl(String selectorId, String url, Boolean enabled);
+
     /**
      * Import the discoveryUpstream data list.
+     *
      * @param discoveryUpstreamList the discoveryUpstream data
      * @return config import result
      */
     ConfigImportResult importData(List<DiscoveryUpstreamDTO> discoveryUpstreamList);
+
+    /**
+     * Import the discoveryUpstream data list.
+     *
+     * @param namespace the namespace
+     * @param discoveryUpstreamList the discoveryUpstream data
+     * @return config import result
+     */
+    ConfigImportResult importData(String namespace, List<DiscoveryUpstreamDTO> discoveryUpstreamList);
 }

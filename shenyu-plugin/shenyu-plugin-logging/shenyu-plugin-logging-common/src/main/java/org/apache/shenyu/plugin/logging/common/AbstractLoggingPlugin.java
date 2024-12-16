@@ -102,7 +102,8 @@ public abstract class AbstractLoggingPlugin<L extends ShenyuRequestLog> extends 
 
         L requestInfo = this.doLogExecute(exchange, selector, rule);
         requestInfo.setRequestUri(request.getURI().toString());
-        requestInfo.setMethod(request.getMethodValue());
+        requestInfo.setMethod(request.getMethod().name());
+        requestInfo.setRequestMethod(request.getMethod().name());
         requestInfo.setRequestHeader(LogCollectUtils.getHeaders(request.getHeaders()));
         requestInfo.setQueryParams(request.getURI().getQuery());
         requestInfo.setClientIp(HostAddressUtils.acquireIp(exchange));
@@ -111,13 +112,19 @@ public abstract class AbstractLoggingPlugin<L extends ShenyuRequestLog> extends 
         requestInfo.setPath(request.getURI().getRawPath());
         requestInfo.setSelectorId(selector.getId());
         requestInfo.setRuleId(rule.getId());
+        requestInfo.setNamespaceId(rule.getNamespaceId());
         LoggingServerHttpRequest<L> loggingServerHttpRequest = new LoggingServerHttpRequest<>(request, requestInfo);
         LoggingServerHttpResponse<L> loggingServerHttpResponse = new LoggingServerHttpResponse<>(exchange.getResponse(),
                 requestInfo, this.logCollector(), desensitized, keywordSets, dataDesensitizeAlg);
         ServerWebExchange webExchange = exchange.mutate().request(loggingServerHttpRequest)
                 .response(loggingServerHttpResponse).build();
         loggingServerHttpResponse.setExchange(webExchange);
-        return chain.execute(webExchange).doOnError(loggingServerHttpResponse::logError);
+        try {
+            return chain.execute(webExchange).doOnError(loggingServerHttpResponse::logError);
+        } catch (Exception e) {
+            loggingServerHttpResponse.logError(e);
+            throw e;
+        }
     }
 
     /**

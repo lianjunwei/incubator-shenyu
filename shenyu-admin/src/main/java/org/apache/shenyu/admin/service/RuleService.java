@@ -88,15 +88,16 @@ public interface RuleService extends PageService<RuleQueryCondition, RuleVO> {
     int update(RuleDTO ruleDTO);
 
     /**
-     * delete rules.
+     * delete rules by ids and namespaceId.
      *
      * @param ids primary key.
+     * @param namespaceId namespaceId.
      * @return rows int
      */
-    int delete(List<String> ids);
+    int deleteByIdsAndNamespaceId(List<String> ids, String namespaceId);
 
     /**
-     * find rule by id.
+     * find rule by id and namespaceId.
      *
      * @param id primary key.
      * @return {@linkplain RuleVO}
@@ -119,11 +120,27 @@ public interface RuleService extends PageService<RuleQueryCondition, RuleVO> {
     List<RuleData> listAll();
 
     /**
+     * List all list by namespaceId.
+     *
+     * @param namespaceId the namespaceId
+     * @return the list
+     */
+    List<RuleData> listAllByNamespaceId(String namespaceId);
+
+    /**
      * List all rule vo list.
      *
      * @return the rule vo list
      */
     List<RuleVO> listAllData();
+
+    /**
+     * List all rule vo list.
+     *
+     * @param namespaceId the namespaceId
+     * @return the rule vo list
+     */
+    List<RuleVO> listAllDataByNamespaceId(String namespaceId);
 
     /**
      * Find by selector id list.
@@ -160,17 +177,28 @@ public interface RuleService extends PageService<RuleQueryCondition, RuleVO> {
 
     /**
      * Import data.
+     *
      * @param ruleList rule list
      * @return config import result
      */
     ConfigImportResult importData(List<RuleDTO> ruleList);
 
     /**
-     * Enabled string.
+     * Import data.
+     *
+     * @param namespace namespace
+     * @param ruleList rule list
+     * @return config import result
+     */
+    ConfigImportResult importData(String namespace, List<RuleDTO> ruleList);
+
+    /**
+     * Enabled string by ids and namespaceId.
      *
      * @param ids     the ids
-     * @param enabled the enable
+     * @param enabled the enabled
+     * @param namespaceId the namespaceId.
      * @return the result
      */
-    Boolean enabled(List<String> ids, Boolean enabled);
+    Boolean enabledByIdsAndNamespaceId(List<String> ids, Boolean enabled, String namespaceId);
 }

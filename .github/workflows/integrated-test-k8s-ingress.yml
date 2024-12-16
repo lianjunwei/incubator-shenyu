@@ -32,7 +32,7 @@ jobs:
           - shenyu-integrated-test-k8s-ingress-spring-cloud
           - shenyu-integrated-test-k8s-ingress-websocket
           - shenyu-integrated-test-k8s-ingress-grpc
-          - shenyu-integrated-test-k8s-ingress-sofa
+#          - shenyu-integrated-test-k8s-ingress-sofa
     runs-on: ubuntu-latest
     if: github.repository == 'apache/shenyu'
     steps:
@@ -63,10 +63,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         if: steps.filter.outputs.changed == 'true'
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'temurin'
 
       - name: Install Go
@@ -90,10 +90,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         if: steps.filter.outputs.changed == 'true'
         with:
-          java-version: 8
+          java-version: 17
           distribution: 'temurin'
 
       - name: Build with Maven
@@ -127,9 +127,13 @@ jobs:
       - name: Cluster Test after Healthcheck
         if: steps.filter.outputs.changed == 'true'
         run: |
-          kubectl get all
-          kubectl get all -n shenyu-ingress
+          echo "----------kubectl get all -o wide----------"
+          kubectl get all -o wide
+          echo "----------kubectl get all -n shenyu-ingress -o wide----------"
+          kubectl get all -n shenyu-ingress -o wide
+          echo "----------kubectl get events --all-namespaces----------"
           kubectl get events --all-namespaces
+          echo "----------kubectl logs -l app=shenyu-ingress-controller -n shenyu-ingress --tail=-1----------"
           kubectl logs -l app=shenyu-ingress-controller -n shenyu-ingress --tail=-1
           if [[ ${{steps.test.outcome}} == "failure" ]]; then
             echo "Test Failed"

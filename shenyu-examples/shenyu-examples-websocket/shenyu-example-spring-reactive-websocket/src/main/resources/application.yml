@@ -19,6 +19,7 @@ server:
 
 
 shenyu:
+  namespace: 649330b6-c2d7-4edc-be8e-8a54df9eb385
   register:
     registerType: http
     serverLists: http://localhost:9095
@@ -52,10 +53,10 @@ shenyu:
 
 logging:
   level:
-    root: info
-    org.springframework.boot: info
-    org.apache.ibatis: info
-    org.apache.shenyu.bonuspoint: info
+    root: debug
+    org.springframework.boot: debug
+    org.apache.ibatis: debug
+    org.apache.shenyu.bonuspoint: debug
     org.apache.shenyu.lottery: debug
     org.apache.shenyu: debug
 

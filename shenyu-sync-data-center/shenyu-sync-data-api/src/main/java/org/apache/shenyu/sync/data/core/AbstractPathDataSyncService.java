@@ -19,6 +19,7 @@ package org.apache.shenyu.sync.data.core;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.shenyu.common.constant.DefaultPathConstants;
 import org.apache.shenyu.common.dto.AppAuthData;
 import org.apache.shenyu.common.dto.DiscoverySyncData;
@@ -27,7 +28,6 @@ import org.apache.shenyu.common.dto.PluginData;
 import org.apache.shenyu.common.dto.ProxySelectorData;
 import org.apache.shenyu.common.dto.RuleData;
 import org.apache.shenyu.common.dto.SelectorData;
-import org.apache.shenyu.common.exception.ShenyuException;
 import org.apache.shenyu.common.utils.GsonUtils;
 import org.apache.shenyu.sync.data.api.AuthDataSubscriber;
 import org.apache.shenyu.sync.data.api.DiscoveryUpstreamDataSubscriber;
@@ -36,7 +36,6 @@ import org.apache.shenyu.sync.data.api.PluginDataSubscriber;
 import org.apache.shenyu.sync.data.api.ProxySelectorDataSubscriber;
 import org.apache.shenyu.sync.data.api.SyncDataService;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -70,37 +69,39 @@ public abstract class AbstractPathDataSyncService implements SyncDataService {
         this.discoveryUpstreamDataSubscribers = discoveryUpstreamDataSubscribers;
     }
 
-
     /**
      * event.
      *
+     * @param namespaceId namespaceId
      * @param updatePath updatePath
      * @param updateData updateData
      * @param registerPath registerPath
      * @param eventType eventType
      */
-    public void event(final String updatePath, final String updateData, final String registerPath, final EventType eventType) {
-        switch (registerPath) {
+    public void event(final String namespaceId, final String updatePath, final String updateData, final String registerPath, final EventType eventType) {
+        String realUpdatePath = StringUtils.substringAfter(updatePath, namespaceId);
+        String realRegisterPath = StringUtils.substringAfter(registerPath, namespaceId);
+        switch (realRegisterPath) {
             case DefaultPathConstants.PLUGIN_PARENT:
-                pluginHandlerEvent(updatePath, updateData, eventType);
+                pluginHandlerEvent(realUpdatePath, updateData, eventType);
                 break;
             case DefaultPathConstants.SELECTOR_PARENT:
-                selectorHandlerEvent(updatePath, updateData, eventType);
+                selectorHandlerEvent(realUpdatePath, updateData, eventType);
                 break;
             case DefaultPathConstants.META_DATA:
-                metaDataHandlerEvent(updatePath, updateData, eventType);
+                metaDataHandlerEvent(realUpdatePath, updateData, eventType);
                 break;
             case DefaultPathConstants.APP_AUTH_PARENT:
-                appAuthHandlerEvent(updatePath, updateData, eventType);
+                appAuthHandlerEvent(realUpdatePath, updateData, eventType);
                 break;
             case DefaultPathConstants.RULE_PARENT:
-                ruleHandlerEvent(updatePath, updateData, eventType);
+                ruleHandlerEvent(realUpdatePath, updateData, eventType);
                 break;
             case DefaultPathConstants.DISCOVERY_UPSTREAM:
-                discoveryUpstreamHandlerEvent(updatePath, updateData, eventType);
+                discoveryUpstreamHandlerEvent(realUpdatePath, updateData, eventType);
                 break;
             case DefaultPathConstants.PROXY_SELECTOR:
-                proxyHandlerEvent(updatePath, updateData, eventType);
+                proxyHandlerEvent(realUpdatePath, updateData, eventType);
                 break;
             default:
                 break;
@@ -161,11 +162,7 @@ public abstract class AbstractPathDataSyncService implements SyncDataService {
         if (EventType.DELETE.equals(eventType)) {
             final String realPath = updatePath.substring(DefaultPathConstants.META_DATA.length() + 1);
             MetaData metaData = new MetaData();
-            try {
-                metaData.setPath(URLDecoder.decode(realPath, StandardCharsets.UTF_8.name()));
-            } catch (UnsupportedEncodingException e) {
-                throw new ShenyuException(e);
-            }
+            metaData.setPath(URLDecoder.decode(realPath, StandardCharsets.UTF_8));
             unCacheMetaData(metaData);
             return;
         }

@@ -214,10 +214,10 @@ public class CommonPluginDataSubscriber implements PluginDataSubscriber {
         if (data instanceof PluginData) {
             PluginData pluginData = (PluginData) data;
             final PluginData oldPluginData = BaseDataCache.getInstance().obtainPluginData(pluginData.getName());
-            BaseDataCache.getInstance().cachePluginData(pluginData);
             Optional.ofNullable(handlerMap.get(pluginData.getName()))
                     .ifPresent(handler -> handler.handlerPlugin(pluginData));
 
+            BaseDataCache.getInstance().cachePluginData(pluginData);
             // update enabled plugins
             PluginHandlerEventEnum state = Boolean.TRUE.equals(pluginData.getEnabled())
                     ? PluginHandlerEventEnum.ENABLED : PluginHandlerEventEnum.DISABLED;
@@ -272,7 +272,7 @@ public class CommonPluginDataSubscriber implements PluginDataSubscriber {
             return;
         }
         if (Objects.isNull(oldPluginData) || Objects.isNull(oldPluginData.getSort())
-                || (!Objects.equals(oldPluginData.getSort(), pluginData.getSort()))) {
+                || !Objects.equals(oldPluginData.getSort(), pluginData.getSort())) {
             eventPublisher.publishEvent(new PluginHandlerEvent(PluginHandlerEventEnum.SORTED, pluginData));
         }
     }
