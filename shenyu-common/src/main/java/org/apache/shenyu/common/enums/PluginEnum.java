@@ -143,6 +143,11 @@ public enum PluginEnum {
     LOGGING_CONSOLE(160, 0, "loggingConsole"),
     
     /**
+     * AI Prompt plugin enum.
+     */
+    AI_PROMPT(170, 0, "aiPrompt"),
+    
+    /**
      * Logging RocketMQ plugin enum.
      */
     LOGGING_ROCKETMQ(170, 0, "loggingRocketMQ"),
@@ -266,6 +271,16 @@ public enum PluginEnum {
      * Key-auth plugin enum.
      */
     KEY_AUTH(430, 0, "keyAuth"),
+
+    /**
+     * Ai-proxy plugin enum.
+     */
+    AI_PROXY(199, 0, "aiProxy"),
+
+    /**
+     * Ai-token-limiter plugin enum.
+     */
+    AI_TOKEN_LIMITER(171, 0, "aiTokenLimiter"),
     
     /**
      * Basic-auth plugin enum.

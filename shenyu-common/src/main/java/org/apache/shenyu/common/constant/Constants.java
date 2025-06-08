@@ -930,10 +930,65 @@ public interface Constants {
      * The constant preserve host.
      */
     String PRESERVE_HOST = "preserveHost";
+
+    /**
+     * The constant model.
+     */
+    String MODEL = "model";
+
+    /**
+     * The constant stream.
+     */
+    String STREAM = "stream";
+
+    /**
+     * The constant prompt.
+     */
+    String PROMPT = "prompt";
+
+    /**
+     * The constant messages.
+     */
+    String MESSAGES = "messages";
+    
+    /**
+     * The constant Content-Encoding.
+     */
+    String CONTENT_ENCODING = "Content-Encoding";
+    /**
+     * Http request retry policy.
+     */
+    String HTTP_RETRY_BACK_OFF_SPEC = "default";
+
+    /**
+     * The constant Content.
+     */
+    String CONTENT = "content";
+    
+    /**
+     * The constant ROLE.
+     */
+    String ROLE = "role";
+    
+    /**
+     * The constant USAGE.
+     */
+    String USAGE = "usage";
+    
+    /**
+     * The constant COMPLETION_TOKENS.
+     */
+    String COMPLETION_TOKENS = "completion_tokens";
+    
+    /**
+     * The constant AI_MODEL.
+     */
+    String AI_MODEL = "ai_model";
     
     /**
      * String q.
      */
     default void findConstants() {
     }
+    
 }
